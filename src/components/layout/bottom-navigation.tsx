@@ -1,6 +1,6 @@
 'use client'
 
-import { MessageCircle, Code, Play } from 'lucide-react'
+import { MessageCircle, Code, History } from 'lucide-react'
 import { useAppStore } from '@/store/app-store'
 import { cn } from '@/lib/utils'
 
@@ -19,6 +19,12 @@ export function BottomNavigation() {
       label: 'Playground',
       icon: Code,
       description: '3D Scene Editor'
+    },
+    {
+      id: 'history' as const,
+      label: 'History',
+      icon: History,
+      description: 'Conversations'
     }
   ]
 

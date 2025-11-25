@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChatInterface } from '@/components/chat/chat-interface'
 import { PlaygroundView } from '@/components/playground/playground-view'
+import { ConversationList } from '@/components/conversation/conversation-list'
 import { SettingsPanel } from '@/components/settings/settings-panel'
 import { Header } from '@/components/layout/header'
 import { BottomNavigation } from '@/components/layout/bottom-navigation'
@@ -18,6 +19,8 @@ export default function Home() {
         return <ChatInterface />
       case 'playground':
         return <PlaygroundView />
+      case 'history':
+        return <ConversationList />
       default:
         return <ChatInterface />
     }

@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Loader2, Code, Copy, Download } from 'lucide-react'
+import { Send, Loader2, Code, Copy, Download, ChevronDown, Sparkles, BookOpen } from 'lucide-react'
 import { useAppStore } from '@/store/app-store'
 import { AIService } from '@/lib/ai-service'
 import { extractCodeFromMessage, copyToClipboard, downloadTextFile } from '@/lib/utils'
 import { ChatMessage } from './chat-message'
+import { ExamplesModal } from '../examples/examples-modal'
 import toast from 'react-hot-toast'
 
 export function ChatInterface() {
@@ -15,21 +16,63 @@ export function ChatInterface() {
     isLoading,
     setLoading,
     settings,
+    libraries,
+    providers,
     getCurrentLibrary,
     getCurrentProvider,
     getCurrentModel,
     setCurrentCode,
-    setCurrentView
+    setCurrentView,
+    updateSettings
   } = useAppStore()
-  
+
   const [input, setInput] = useState('')
+  const [showLibraryDropdown, setShowLibraryDropdown] = useState(false)
+  const [showModelDropdown, setShowModelDropdown] = useState(false)
+  const [showExamples, setShowExamples] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const libraryDropdownRef = useRef<HTMLDivElement>(null)
+  const modelDropdownRef = useRef<HTMLDivElement>(null)
   const aiService = AIService.getInstance()
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (libraryDropdownRef.current && !libraryDropdownRef.current.contains(event.target as Node)) {
+        setShowLibraryDropdown(false)
+      }
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(event.target as Node)) {
+        setShowModelDropdown(false)
+      }
+    }
+
+    if (showLibraryDropdown || showModelDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showLibraryDropdown, showModelDropdown])
+
+  const handleLibraryChange = (libraryId: string) => {
+    updateSettings({ selectedLibrary: libraryId })
+    setShowLibraryDropdown(false)
+    toast.success(`Switched to ${libraries.find(l => l.id === libraryId)?.name}`)
+  }
+
+  const handleModelChange = (providerId: string, modelId: string) => {
+    updateSettings({
+      selectedProvider: providerId,
+      selectedModel: modelId
+    })
+    setShowModelDropdown(false)
+    const provider = providers.find(p => p.id === providerId)
+    const model = provider?.models.find(m => m.id === modelId)
+    toast.success(`Switched to ${model?.name}`)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -182,9 +225,113 @@ export function ChatInterface() {
 
   const currentLibrary = getCurrentLibrary()
   const currentModel = getCurrentModel()
+  const currentProvider = getCurrentProvider()
 
   return (
     <div className="flex flex-col h-full">
+      {/* Header with dropdowns */}
+      <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center space-x-3">
+          {/* Library Dropdown */}
+          <div className="relative" ref={libraryDropdownRef}>
+            <button
+              onClick={() => setShowLibraryDropdown(!showLibraryDropdown)}
+              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+            >
+              <Code size={16} />
+              <span>{currentLibrary?.name || 'Select Library'}</span>
+              <ChevronDown size={14} className={`transition-transform ${showLibraryDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showLibraryDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                <div className="py-1">
+                  {libraries.map((library) => (
+                    <button
+                      key={library.id}
+                      onClick={() => handleLibraryChange(library.id)}
+                      className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        currentLibrary?.id === library.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                      }`}
+                    >
+                      <div className="font-medium text-sm text-gray-900 dark:text-white">
+                        {library.name}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        v{library.version} • {library.description}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Model Dropdown */}
+          <div className="relative" ref={modelDropdownRef}>
+            <button
+              onClick={() => setShowModelDropdown(!showModelDropdown)}
+              className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 hover:from-purple-200 hover:to-blue-200 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+            >
+              <Sparkles size={16} />
+              <span>{currentModel?.name || 'Select Model'}</span>
+              <ChevronDown size={14} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showModelDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                <div className="py-1">
+                  {providers.map((provider) => (
+                    <div key={provider.id}>
+                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        {provider.name}
+                      </div>
+                      {provider.models.map((model) => (
+                        <button
+                          key={`${provider.id}-${model.id}`}
+                          onClick={() => handleModelChange(provider.id, model.id)}
+                          disabled={!settings.apiKeys[provider.id]}
+                          className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                            currentProvider?.id === provider.id && currentModel?.id === model.id
+                              ? 'bg-purple-50 dark:bg-purple-900/20'
+                              : ''
+                          }`}
+                        >
+                          <div className="font-medium text-sm text-gray-900 dark:text-white">
+                            {model.name}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            {model.description}
+                            {!settings.apiKeys[provider.id] && ' • API key required'}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowExamples(true)}
+            className="flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-200 hover:to-emerald-200 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+          >
+            <BookOpen size={14} />
+            <span>Examples</span>
+          </button>
+
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Temp: {settings.temperature} • Top-p: {settings.topP}
+          </div>
+        </div>
+      </div>
+
+      {/* Examples Modal */}
+      <ExamplesModal isOpen={showExamples} onClose={() => setShowExamples(false)} />
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (

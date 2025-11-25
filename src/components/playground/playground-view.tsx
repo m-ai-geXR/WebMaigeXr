@@ -1,27 +1,31 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Play, Square, RotateCcw, Download, Upload, Maximize2, Minimize2 } from 'lucide-react'
+import { Play, Square, RotateCcw, Download, Upload, Maximize2, Minimize2, ChevronDown, Code as CodeIcon, BookOpen } from 'lucide-react'
 import { useAppStore } from '@/store/app-store'
 import { CodeEditor } from './code-editor'
 import { SceneRenderer } from './scene-renderer'
 import { SandpackWebView } from './sandpack-webview'
 import { downloadTextFile } from '@/lib/utils'
 import { SandpackErrorBoundary } from './error-boundary'
+import { ExamplesModal } from '../examples/examples-modal'
 import toast from 'react-hot-toast'
 
 export function PlaygroundView() {
-  const { currentCode, setCurrentCode, getCurrentLibrary } = useAppStore()
+  const { currentCode, setCurrentCode, getCurrentLibrary, libraries, updateSettings } = useAppStore()
   const [isRunning, setIsRunning] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [splitView, setSplitView] = useState(true)
+  const [showLibraryDropdown, setShowLibraryDropdown] = useState(false)
+  const [showExamples, setShowExamples] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const libraryDropdownRef = useRef<HTMLDivElement>(null)
   
   const currentLibrary = getCurrentLibrary()
   
   // Determine if we should use Sandpack (React frameworks) or iframe (legacy frameworks)
-  const useSandpack = currentLibrary?.id === 'react-three-fiber'
-  const sandpackFramework = 'react-three-fiber'
+  const useSandpack = currentLibrary?.id === 'react-three-fiber' || currentLibrary?.id === 'reactylon'
+  const sandpackFramework: 'react-three-fiber' | 'reactylon' = currentLibrary?.id === 'reactylon' ? 'reactylon' : 'react-three-fiber'
 
   useEffect(() => {
     // Initialize with template if no code exists
@@ -29,6 +33,30 @@ export function PlaygroundView() {
       setCurrentCode(currentLibrary.codeTemplate)
     }
   }, [currentLibrary, currentCode, setCurrentCode])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (libraryDropdownRef.current && !libraryDropdownRef.current.contains(event.target as Node)) {
+        setShowLibraryDropdown(false)
+      }
+    }
+
+    if (showLibraryDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showLibraryDropdown])
+
+  const handleLibraryChange = (libraryId: string) => {
+    const newLibrary = libraries.find(l => l.id === libraryId)
+    if (newLibrary) {
+      updateSettings({ selectedLibrary: libraryId })
+      setCurrentCode(newLibrary.codeTemplate)
+      setShowLibraryDropdown(false)
+      toast.success(`Switched to ${newLibrary.name}`)
+    }
+  }
 
   const handleRunCode = () => {
     if (!currentCode.trim()) {
@@ -63,7 +91,7 @@ export function PlaygroundView() {
       return
     }
     
-    const extension = currentLibrary?.id === 'react-three-fiber' ? 'jsx' : 'js'
+    const extension = (currentLibrary?.id === 'react-three-fiber' || currentLibrary?.id === 'reactylon') ? 'jsx' : 'js'
     downloadTextFile(currentCode, `scene.${extension}`)
     toast.success('Code downloaded!')
   }
@@ -121,11 +149,42 @@ export function PlaygroundView() {
       {/* Toolbar */}
       <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-2 mr-4">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {currentLibrary.name} v{currentLibrary.version}
-            </span>
+          {/* Library Dropdown */}
+          <div className="relative mr-2" ref={libraryDropdownRef}>
+            <button
+              onClick={() => setShowLibraryDropdown(!showLibraryDropdown)}
+              className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+            >
+              <CodeIcon size={14} />
+              <span>{currentLibrary.name}</span>
+              <ChevronDown size={12} className={`transition-transform ${showLibraryDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showLibraryDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                <div className="py-1">
+                  {libraries.map((library) => (
+                    <button
+                      key={library.id}
+                      onClick={() => handleLibraryChange(library.id)}
+                      className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        currentLibrary?.id === library.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                      }`}
+                    >
+                      <div className="font-medium text-sm text-gray-900 dark:text-white">
+                        {library.name}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        v{library.version}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2">
             {useSandpack && (
               <span className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded font-medium">
                 Sandpack Live
@@ -156,13 +215,23 @@ export function PlaygroundView() {
 
         <div className="flex items-center space-x-2">
           <button
+            onClick={() => setShowExamples(true)}
+            className="flex items-center space-x-1 px-2 py-1.5 rounded-lg text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors font-medium"
+          >
+            <BookOpen size={16} />
+            <span>Examples</span>
+          </button>
+
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+
+          <button
             onClick={handleUploadCode}
             className="flex items-center space-x-1 px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <Upload size={16} />
             <span>Upload</span>
           </button>
-          
+
           <button
             onClick={handleDownloadCode}
             className="flex items-center space-x-1 px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -170,7 +239,7 @@ export function PlaygroundView() {
             <Download size={16} />
             <span>Download</span>
           </button>
-          
+
           <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
           
           <button
@@ -197,7 +266,7 @@ export function PlaygroundView() {
             <CodeEditor
               value={currentCode}
               onChange={setCurrentCode}
-              language={currentLibrary.id === 'react-three-fiber' ? 'jsx' : 'javascript'}
+              language={(currentLibrary.id === 'react-three-fiber' || currentLibrary.id === 'reactylon') ? 'jsx' : 'javascript'}
               library={currentLibrary}
             />
           </div>
@@ -215,7 +284,7 @@ export function PlaygroundView() {
               >
                 <SandpackWebView
                   initialCode={currentCode}
-                  framework="react-three-fiber"
+                  framework={sandpackFramework}
                   onCodeChange={setCurrentCode}
                   onSandboxCreated={(url) => {
                     console.log('Sandbox created:', url)
@@ -245,6 +314,9 @@ export function PlaygroundView() {
         onChange={handleFileChange}
         className="hidden"
       />
+
+      {/* Examples Modal */}
+      <ExamplesModal isOpen={showExamples} onClose={() => setShowExamples(false)} />
     </div>
   )
 }
