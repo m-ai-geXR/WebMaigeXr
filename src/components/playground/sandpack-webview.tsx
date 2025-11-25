@@ -18,7 +18,7 @@ import toast from 'react-hot-toast'
 
 interface SandpackWebViewProps {
   initialCode: string
-  framework: 'react' | 'react-three-fiber'
+  framework: 'react' | 'react-three-fiber' | 'reactylon'
   onCodeChange?: (code: string) => void
   onSandboxCreated?: (sandboxUrl: string) => void
   showConsole?: boolean
@@ -58,42 +58,31 @@ export function SandpackWebView({
   useEffect(() => {
     try {
       setError(null) // Clear any previous errors
-      
+
+      let generatedFiles
+
       if (framework === 'react-three-fiber') {
-        const r3fFiles = codeSandboxService.generateR3FFiles(initialCode)
-        const filesObj: Record<string, string> = {}
-        
-        Object.entries(r3fFiles.files).forEach(([path, fileData]) => {
-          if (!fileData || !fileData.code) {
-            throw new Error(`Invalid file data for ${path}`)
-          }
-          filesObj[path] = fileData.code
-        })
-        
-        setFiles(filesObj)
-        setTemplate('create-react-app')
-        
-        const deps = codeSandboxService.generateR3FFiles(initialCode)
-        const packageJson = JSON.parse(deps.files['package.json'].code)
-        setDependencies(packageJson.dependencies || {})
+        generatedFiles = codeSandboxService.generateR3FFiles(initialCode)
+      } else if (framework === 'reactylon') {
+        generatedFiles = codeSandboxService.generateReactylonFiles(initialCode)
       } else {
-        // Standard React setup
-        const reactFiles = codeSandboxService.generateReactFiles(initialCode)
-        const filesObj: Record<string, string> = {}
-        
-        Object.entries(reactFiles.files).forEach(([path, fileData]) => {
-          if (!fileData || !fileData.code) {
-            throw new Error(`Invalid file data for ${path}`)
-          }
-          filesObj[path] = fileData.code
-        })
-        
-        setFiles(filesObj)
-        setTemplate('create-react-app')
-        
-        const packageJson = JSON.parse(reactFiles.files['package.json'].code)
-        setDependencies(packageJson.dependencies || {})
+        generatedFiles = codeSandboxService.generateReactFiles(initialCode)
       }
+
+      const filesObj: Record<string, string> = {}
+
+      Object.entries(generatedFiles.files).forEach(([path, fileData]) => {
+        if (!fileData || !fileData.code) {
+          throw new Error(`Invalid file data for ${path}`)
+        }
+        filesObj[path] = fileData.code
+      })
+
+      setFiles(filesObj)
+      setTemplate('create-react-app')
+
+      const packageJson = JSON.parse(generatedFiles.files['package.json'].code)
+      setDependencies(packageJson.dependencies || {})
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       handleError(error as Error, 'Sandpack initialization')
@@ -144,16 +133,21 @@ export function SandpackWebView({
   
   const handleCreateSandbox = async () => {
     if (isCreatingSandbox) return
-    
+
     setIsCreatingSandbox(true)
     try {
-      const options = framework === 'react-three-fiber' 
-        ? codeSandboxService.generateR3FFiles(files['src/App.js'] || initialCode)
-        : codeSandboxService.generateReactFiles(files['src/App.js'] || initialCode)
-      
+      let options
+      if (framework === 'react-three-fiber') {
+        options = codeSandboxService.generateR3FFiles(files['src/App.js'] || initialCode)
+      } else if (framework === 'reactylon') {
+        options = codeSandboxService.generateReactylonFiles(files['src/App.js'] || initialCode)
+      } else {
+        options = codeSandboxService.generateReactFiles(files['src/App.js'] || initialCode)
+      }
+
       const sandboxUrl = await codeSandboxService.createSandbox(options)
       onSandboxCreated?.(sandboxUrl)
-      
+
       await copyToClipboard(sandboxUrl)
       toast.success('Sandbox created! URL copied to clipboard.')
     } catch (error) {
@@ -171,10 +165,11 @@ export function SandpackWebView({
       setIsCreatingSandbox(true)
       const currentCode = files['src/App.js'] || initialCode
       
+      const frameworkTitle = framework === 'react-three-fiber' ? 'React Three Fiber' : framework === 'reactylon' ? 'Reactylon' : 'React'
       const result = await sharingService.shareCodeSandbox(currentCode, platform, {
-        title: `Interactive ${framework === 'react-three-fiber' ? 'React Three Fiber' : 'React'} Scene`,
+        title: `Interactive ${frameworkTitle} Scene`,
         description: 'Created with XRAiAssistant - AI-powered 3D development',
-        hashtags: ['XRAiAssistant', 'ReactThreeFiber', 'WebXR', 'AI', '3D']
+        hashtags: ['XRAiAssistant', framework === 'react-three-fiber' ? 'ReactThreeFiber' : framework === 'reactylon' ? 'Reactylon' : 'React', 'WebXR', 'AI', '3D']
       })
       
       if (result.success) {
@@ -237,11 +232,16 @@ export function SandpackWebView({
       <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {framework === 'react-three-fiber' ? 'React Three Fiber' : 'React'} Sandbox
+            {framework === 'react-three-fiber' ? 'React Three Fiber' : framework === 'reactylon' ? 'Reactylon' : 'React'} Sandbox
           </span>
           {framework === 'react-three-fiber' && (
             <span className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded">
               R3F
+            </span>
+          )}
+          {framework === 'reactylon' && (
+            <span className="px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded">
+              Reactylon
             </span>
           )}
           <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">

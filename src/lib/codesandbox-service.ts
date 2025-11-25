@@ -89,14 +89,14 @@ export class CodeSandboxService {
   generateReactFiles(userCode: string): DefineAPIOptions {
     return {
       files: {
-        'src/App.js': { 
-          code: userCode 
+        'src/App.js': {
+          code: userCode
         },
-        'src/index.js': { 
-          code: this.getReactIndex() 
+        'src/index.js': {
+          code: this.getReactIndex()
         },
-        'package.json': { 
-          code: JSON.stringify(this.getReactDependencies(), null, 2) 
+        'package.json': {
+          code: JSON.stringify(this.getReactDependencies(), null, 2)
         },
         'public/index.html': {
           code: this.getIndexHTML('XRAiAssistant React App')
@@ -105,7 +105,107 @@ export class CodeSandboxService {
       template: 'create-react-app'
     }
   }
+
+  generateReactylonFiles(userCode: string): DefineAPIOptions {
+    const files: Record<string, { code: string }> = {
+      'src/App.js': {
+        code: this.wrapReactylonComponent(userCode)
+      },
+      'src/index.js': {
+        code: this.getReactIndex()
+      },
+      'package.json': {
+        code: JSON.stringify(this.getReactylonDependencies(), null, 2)
+      },
+      'public/index.html': {
+        code: this.getIndexHTML('XRAiAssistant Reactylon Scene')
+      }
+    }
+
+    return {
+      files,
+      template: 'create-react-app'
+    }
+  }
   
+  private wrapReactylonComponent(userCode: string): string {
+    // Check if userCode already has a complete App component with Engine
+    if (userCode.includes('export default') && userCode.includes('Engine')) {
+      return userCode
+    }
+
+    // Check if userCode defines a component or is Reactylon JSX
+    const hasComponentDefinition = userCode.includes('function ') || userCode.includes('const ') || userCode.includes('export')
+
+    if (hasComponentDefinition) {
+      // User code contains components, wrap in Engine
+      return `import React from 'react'
+import { Engine } from 'reactylon/web'
+import { Scene, arcRotateCamera, hemisphericLight } from 'reactylon'
+import { Vector3 } from '@babylonjs/core'
+
+${userCode}
+
+export default function App() {
+  return (
+    <Engine antialias adaptToDeviceRatio canvasId="renderCanvas">
+      <Scene>
+        <arcRotateCamera
+          name="camera"
+          alpha={Math.PI / 2}
+          beta={Math.PI / 2.5}
+          radius={8}
+          target={Vector3.Zero()}
+        />
+        <hemisphericLight
+          name="light"
+          intensity={0.7}
+          direction={new Vector3(0, 1, 0)}
+        />
+        <SceneContent />
+      </Scene>
+    </Engine>
+  )
+}`
+    } else {
+      // User code is JSX elements, wrap in a SceneContent component
+      return `import React from 'react'
+import { Engine } from 'reactylon/web'
+import { Scene, arcRotateCamera, hemisphericLight } from 'reactylon'
+import { Vector3 } from '@babylonjs/core'
+
+function SceneContent() {
+  return (
+    <>
+      ${userCode}
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <Engine antialias adaptToDeviceRatio canvasId="renderCanvas">
+      <Scene>
+        <arcRotateCamera
+          name="camera"
+          alpha={Math.PI / 2}
+          beta={Math.PI / 2.5}
+          radius={8}
+          target={Vector3.Zero()}
+        />
+        <hemisphericLight
+          name="light"
+          intensity={0.7}
+          direction={new Vector3(0, 1, 0)}
+        />
+        <SceneContent />
+      </Scene>
+    </Engine>
+  )
+}`
+    }
+  }
+
   private wrapR3FComponent(userCode: string): string {
     // Check if userCode already has a complete App component
     if (userCode.includes('export default') && userCode.includes('Canvas')) {
@@ -266,6 +366,34 @@ root.render(<App />)`
       dependencies: {
         'react': '^18.2.0',
         'react-dom': '^18.2.0'
+      },
+      scripts: {
+        start: 'react-scripts start',
+        build: 'react-scripts build',
+        test: 'react-scripts test',
+        eject: 'react-scripts eject'
+      },
+      browserslist: {
+        production: ['>0.2%', 'not dead', 'not op_mini all'],
+        development: ['last 1 chrome version', 'last 1 firefox version', 'last 1 safari version']
+      }
+    }
+  }
+
+  private getReactylonDependencies() {
+    return {
+      name: 'xraiassistant-reactylon-scene',
+      version: '1.0.0',
+      description: 'Reactylon (React + Babylon.js) scene generated with XRAiAssistant',
+      dependencies: {
+        'reactylon': '^3.2.1',
+        '@babylonjs/core': '^8.0.0',
+        '@babylonjs/loaders': '^8.0.0',
+        '@babylonjs/materials': '^8.0.0',
+        '@babylonjs/gui': '^8.0.0',
+        'react': '^18.2.0',
+        'react-dom': '^18.2.0',
+        'react-reconciler': '^0.29.0'
       },
       scripts: {
         start: 'react-scripts start',

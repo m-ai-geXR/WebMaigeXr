@@ -59,8 +59,33 @@ export function SceneRenderer({ code, library, isRunning }: SceneRendererProps) 
   }
 
   const createSceneHTML = (userCode: string, library: Library3D): string => {
+    // A-Frame: Check if it's a full HTML document
+    if (library.id === 'aframe') {
+      if (userCode.includes('<!DOCTYPE html>') || userCode.includes('<html')) {
+        // User provided full HTML, use as-is
+        return userCode
+      } else {
+        // User provided just A-Frame tags, wrap in HTML
+        return `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>A-Frame Scene</title>
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+    <style>
+      body { margin: 0; padding: 0; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    ${userCode}
+  </body>
+</html>`
+      }
+    }
+
     const cdnLinks = library.cdnUrls.map(url => `<script src="${url}"></script>`).join('\n')
-    
+
     let setupCode = ''
     let wrapperCode = userCode
 
@@ -71,7 +96,7 @@ export function SceneRenderer({ code, library, isRunning }: SceneRendererProps) 
           <canvas id="renderCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
         `
         break
-        
+
       case 'threejs':
         setupCode = `
           <div id="scene-container" style="width: 100%; height: 100%;"></div>
@@ -82,7 +107,7 @@ export function SceneRenderer({ code, library, isRunning }: SceneRendererProps) 
           'document.getElementById("scene-container").appendChild(renderer.domElement)'
         )
         break
-        
+
       case 'react-three-fiber':
         setupCode = `
           <div id="root" style="width: 100%; height: 100%;"></div>
@@ -93,9 +118,9 @@ export function SceneRenderer({ code, library, isRunning }: SceneRendererProps) 
         wrapperCode = `
           const { createElement: h, useState, useRef } = React;
           const { createRoot } = ReactDOM;
-          
+
           ${userCode}
-          
+
           const root = createRoot(document.getElementById('root'));
           root.render(h(App));
         `

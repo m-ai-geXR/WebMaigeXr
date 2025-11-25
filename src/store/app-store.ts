@@ -1,7 +1,15 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+/**
+ * Updated App Store with SQLite Integration
+ *
+ * This replaces the old localStorage-only persistence with SQLite for better
+ * performance and relational data support (conversations, messages, snippets).
+ */
 
-export type ViewType = 'chat' | 'playground'
+import { create } from 'zustand'
+import { dbService, type Conversation, type Message as DBMessage, type AppSettings as DBSettings, type CodeSnippet } from '@/lib/db-service'
+import { defaultLibraries, defaultProviders, defaultSettings } from './store-defaults'
+
+export type ViewType = 'chat' | 'playground' | 'history'
 
 export interface Library3D {
   id: string
@@ -46,461 +54,333 @@ export interface AppSettings {
 }
 
 interface AppState {
+  // Initialization
+  isInitialized: boolean
+  initialize: () => Promise<void>
+
   // View state
   currentView: ViewType
   setCurrentView: (view: ViewType) => void
-  
-  // Chat state
+
+  // Conversation state (NEW with SQLite)
+  conversations: Conversation[]
+  currentConversationId: string | null
+  loadConversations: () => void
+  createConversation: (title?: string) => string
+  loadConversation: (id: string) => void
+  deleteConversation: (id: string) => void
+  updateConversationTitle: (id: string, title: string) => void
+  searchConversations: (query: string) => Conversation[]
+
+  // Chat/Message state
   messages: ChatMessage[]
   isLoading: boolean
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void
   setLoading: (loading: boolean) => void
   clearMessages: () => void
-  
+  deleteMessage: (id: string) => void
+  editMessage: (id: string, newContent: string) => void
+  regenerateMessage: (id: string) => Promise<void>
+
   // Code state
   currentCode: string
   setCurrentCode: (code: string) => void
-  
+
   // Settings state
   settings: AppSettings
   updateSettings: (settings: Partial<AppSettings>) => void
-  
+
   // Library state
   libraries: Library3D[]
   setLibraries: (libraries: Library3D[]) => void
   getCurrentLibrary: () => Library3D | undefined
-  
+
   // AI Provider state
   providers: AIProvider[]
   setProviders: (providers: AIProvider[]) => void
   getCurrentProvider: () => AIProvider | undefined
   getCurrentModel: () => AIProvider['models'][0] | undefined
+
+  // Code Snippets state (NEW with SQLite)
+  snippets: CodeSnippet[]
+  loadSnippets: (library?: string) => void
+  addSnippet: (snippet: Omit<CodeSnippet, 'id' | 'createdAt' | 'updatedAt'>) => string
+  deleteSnippet: (id: string) => void
+  loadSnippetToEditor: (id: string) => void
+  searchSnippets: (query: string) => CodeSnippet[]
 }
 
-// Default libraries
-const defaultLibraries: Library3D[] = [
-  {
-    id: 'babylonjs',
-    name: 'Babylon.js',
-    version: '8.22.3',
-    description: 'Professional WebGL engine for 3D graphics',
-    cdnUrls: [
-      'https://cdn.babylonjs.com/babylon.js',
-      'https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js'
-    ],
-    systemPrompt: `You are an expert Babylon.js v8.22.3 developer. Generate complete, working 3D scenes using modern Babylon.js APIs.
+export const useAppStore = create<AppState>((set, get) => ({
+  // ==================== Initialization ====================
 
-Key guidelines:
-- Use BABYLON namespace for all classes
-- Create scenes with proper camera, lighting, and materials
-- Include proper disposal and cleanup
-- Use modern ES6+ syntax
-- Focus on performance and best practices
-- Include helpful comments explaining key concepts`,
-    codeTemplate: `// Babylon.js v8.22.3 Scene Template
-const canvas = document.getElementById('renderCanvas');
-const engine = new BABYLON.Engine(canvas, true);
+  isInitialized: false,
 
-const createScene = () => {
-    const scene = new BABYLON.Scene(engine);
-    
-    // Camera
-    const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 10, BABYLON.Vector3.Zero(), scene);
-    camera.attachToCanvas(canvas, true);
-    
-    // Light
-    const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
-    light.intensity = 0.7;
-    
-    // Your code here
-    
-    return scene;
-};
+  initialize: async () => {
+    try {
+      // Initialize SQLite database
+      await dbService.initialize()
 
-const scene = createScene();
-engine.runRenderLoop(() => {
-    scene.render();
-});
+      // Load settings from database
+      const dbSettings = dbService.getSettings()
+      if (dbSettings) {
+        set({ settings: dbSettings })
+      }
 
-window.addEventListener('resize', () => {
-    engine.resize();
-});`
-  },
-  {
-    id: 'threejs',
-    name: 'Three.js',
-    version: 'r171',
-    description: 'Lightweight 3D library with WebGL renderer',
-    cdnUrls: [
-      'https://unpkg.com/three@0.171.0/build/three.min.js'
-    ],
-    systemPrompt: `You are an expert Three.js r171 developer. Generate complete, working 3D scenes using modern Three.js APIs.
+      // Load conversations list
+      const conversations = dbService.getConversations()
+      set({ conversations })
 
-Key guidelines:
-- Use THREE namespace for all classes
-- Create scenes with proper camera, lighting, and materials
-- Include proper cleanup and disposal
-- Use modern ES6+ syntax and modules when possible
-- Focus on performance optimization
-- Include helpful comments explaining key concepts`,
-    codeTemplate: `// Three.js r171 Scene Template
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
+      // If there's a current conversation, load its messages
+      const { currentConversationId } = get()
+      if (currentConversationId) {
+        const messages = dbService.getMessages(currentConversationId)
+        set({
+          messages: messages.map(m => ({
+            id: m.id,
+            role: m.role,
+            content: m.content,
+            timestamp: m.timestamp,
+            library: m.library,
+            hasCode: m.hasCode
+          }))
+        })
+      }
 
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-// Lighting
-const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-scene.add(ambientLight);
-
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(1, 1, 1);
-scene.add(directionalLight);
-
-// Your code here
-
-camera.position.z = 5;
-
-function animate() {
-    requestAnimationFrame(animate);
-    
-    // Animation code here
-    
-    renderer.render(scene, camera);
-}
-
-animate();
-
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});`
-  },
-  {
-    id: 'react-three-fiber',
-    name: 'React Three Fiber',
-    version: '8.17.10',
-    description: 'React renderer for Three.js with live Sandpack preview and CodeSandbox deployment',
-    cdnUrls: [
-      'https://unpkg.com/three@0.171.0/build/three.min.js',
-      'https://unpkg.com/@react-three/fiber@8.17.10/dist/index.esm.js'
-    ],
-    systemPrompt: `You are an expert React Three Fiber developer. Generate complete, working 3D scenes using React Three Fiber and modern React patterns.
-
-Key guidelines:
-- Use React Three Fiber components and hooks (useFrame, useThree, useRef)
-- Implement proper React patterns (hooks, refs, state, context)
-- Include interactive elements (onClick, onPointerOver, animations)
-- Use @react-three/drei helpers (OrbitControls, Environment, Html, useGLTF, etc.)
-- Focus on component composition and reusability
-- Include performance optimizations (useMemo, useCallback, instancing)
-- Add proper lighting (ambientLight, directionalLight, spotLight)
-- Implement smooth animations and transitions
-- Use proper TypeScript when applicable
-- Include helpful comments explaining React Three Fiber concepts
-- Consider XR/VR compatibility when possible
-- Use modern Three.js patterns and geometries
-- Implement responsive design for different screen sizes`,
-    codeTemplate: `import React, { useRef, useState, useMemo } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, Environment, Stats, Html } from '@react-three/drei'
-import * as THREE from 'three'
-
-function InteractiveCube({ position = [0, 0, 0] }) {
-  const meshRef = useRef()
-  const [hovered, setHover] = useState(false)
-  const [active, setActive] = useState(false)
-
-  // Smooth rotation animation
-  useFrame((state, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x += delta * 0.5
-      meshRef.current.rotation.y += delta * 0.2
-      
-      // Gentle floating motion
-      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime) * 0.1
+      set({ isInitialized: true })
+      console.log('✅ App store initialized with SQLite')
+    } catch (error) {
+      console.error('Failed to initialize app store:', error)
+      // Fall back to defaults on error
+      set({ isInitialized: true })
     }
-  })
-
-  // Memoized material for performance
-  const material = useMemo(() => 
-    new THREE.MeshStandardMaterial({ 
-      color: hovered ? '#ff6b6b' : active ? '#4ecdc4' : '#45b7d1',
-      roughness: 0.4,
-      metalness: 0.8
-    }), [hovered, active])
-
-  return (
-    <group position={position}>
-      <mesh
-        ref={meshRef}
-        scale={active ? 1.3 : hovered ? 1.1 : 1}
-        onClick={() => setActive(!active)}
-        onPointerOver={() => setHover(true)}
-        onPointerOut={() => setHover(false)}
-        castShadow
-        receiveShadow
-        material={material}
-      >
-        <boxGeometry args={[1, 1, 1]} />
-      </mesh>
-      
-      {/* Interactive label */}
-      {hovered && (
-        <Html position={[0, 1.5, 0]} center>
-          <div style={{
-            background: 'rgba(0,0,0,0.8)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '6px',
-            fontSize: '14px'
-          }}>
-            {active ? 'Active!' : 'Click me!'}
-          </div>
-        </Html>
-      )}
-    </group>
-  )
-}
-
-function Scene() {
-  return (
-    <>
-      {/* Multiple interactive cubes */}
-      <InteractiveCube position={[-2, 0, 0]} />
-      <InteractiveCube position={[0, 0, 0]} />
-      <InteractiveCube position={[2, 0, 0]} />
-      
-      {/* Ground plane */}
-      <mesh position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[10, 10]} />
-        <meshStandardMaterial color="#f0f0f0" />
-      </mesh>
-    </>
-  )
-}
-
-export default function App() {
-  return (
-    <div style={{ width: '100vw', height: '100vh' }}>
-      <Canvas
-        camera={{ position: [5, 3, 5], fov: 60 }}
-        shadows
-        dpr={[1, 2]}
-      >
-        {/* Background and atmosphere */}
-        <color attach="background" args={['#f0f8ff']} />
-        <fog attach="fog" args={['#f0f8ff', 5, 20]} />
-        
-        {/* Lighting setup */}
-        <ambientLight intensity={0.4} />
-        <directionalLight
-          position={[10, 10, 5]}
-          intensity={1}
-          castShadow
-          shadow-mapSize={[1024, 1024]}
-          shadow-camera-far={50}
-          shadow-camera-left={-10}
-          shadow-camera-right={10}
-          shadow-camera-top={10}
-          shadow-camera-bottom={-10}
-        />
-        <pointLight position={[-10, 0, -20]} color="#4ecdc4" intensity={0.5} />
-        
-        {/* Scene content */}
-        <Scene />
-        
-        {/* Controls and environment */}
-        <OrbitControls 
-          makeDefault 
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          minDistance={3}
-          maxDistance={20}
-        />
-        <Environment preset="city" />
-        
-        {/* Performance monitoring */}
-        <Stats />
-      </Canvas>
-    </div>
-  )
-}`
-  }
-]
-
-// Default AI providers
-const defaultProviders: AIProvider[] = [
-  {
-    id: 'together',
-    name: 'Together AI',
-    baseUrl: 'https://api.together.xyz/v1',
-    models: [
-      {
-        id: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free',
-        name: 'DeepSeek R1 70B',
-        description: 'Advanced reasoning model (FREE)',
-        pricing: 'Free'
-      },
-      {
-        id: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
-        name: 'Llama 3.3 70B',
-        description: 'Latest Meta large model (FREE)',
-        pricing: 'Free'
-      },
-      {
-        id: 'meta-llama/Llama-3-8B-Instruct-Lite',
-        name: 'Llama 3 8B Lite',
-        description: 'Fast and efficient model',
-        pricing: '$0.10/1M tokens'
-      },
-      {
-        id: 'Qwen/Qwen2.5-7B-Instruct-Turbo',
-        name: 'Qwen 2.5 7B Turbo',
-        description: 'Fast coding specialist',
-        pricing: '$0.30/1M tokens'
-      },
-      {
-        id: 'Qwen/Qwen2.5-Coder-32B-Instruct',
-        name: 'Qwen 2.5 Coder 32B',
-        description: 'Advanced coding & XR specialist',
-        pricing: '$0.80/1M tokens'
-      }
-    ]
   },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    baseUrl: 'https://api.openai.com/v1',
-    models: [
-      {
-        id: 'gpt-4o',
-        name: 'GPT-4o',
-        description: 'Most capable multimodal model',
-        pricing: '$5.00/1M tokens'
-      },
-      {
-        id: 'gpt-4o-mini',
-        name: 'GPT-4o Mini',
-        description: 'Fast and affordable model',
-        pricing: '$0.15/1M tokens'
-      }
-    ]
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic',
-    baseUrl: 'https://api.anthropic.com',
-    models: [
-      {
-        id: 'claude-3-5-sonnet-20241022',
-        name: 'Claude 3.5 Sonnet',
-        description: 'Most capable model for complex tasks',
-        pricing: '$3.00/1M tokens'
-      },
-      {
-        id: 'claude-3-haiku-20240307',
-        name: 'Claude 3 Haiku',
-        description: 'Fast and affordable model',
-        pricing: '$0.25/1M tokens'
-      }
-    ]
-  },
-  {
-    id: 'codesandbox',
-    name: 'CodeSandbox',
-    baseUrl: 'https://codesandbox.io/api/v1',
-    models: [
-      {
-        id: 'sandbox-deployment',
-        name: 'Sandbox Deployment',
-        description: 'Deploy React Three Fiber scenes to CodeSandbox',
-        pricing: 'Free (with optional API key for advanced features)'
-      }
-    ]
-  }
-]
 
-const defaultSettings: AppSettings = {
-  apiKeys: {
-    together: 'changeMe',
-    openai: '',
-    anthropic: '',
-    codesandbox: ''
-  },
-  selectedProvider: 'together',
-  selectedModel: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free',
-  selectedLibrary: 'react-three-fiber',
-  temperature: 0.7,
-  topP: 0.9,
-  systemPrompt: '',
-  theme: 'system'
-}
+  // ==================== View State ====================
 
-export const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      // View state
-      currentView: 'chat',
-      setCurrentView: (view) => set({ currentView: view }),
-      
-      // Chat state
-      messages: [],
-      isLoading: false,
-      addMessage: (message) => set((state) => ({
-        messages: [...state.messages, {
-          ...message,
-          id: Math.random().toString(36).substr(2, 9),
-          timestamp: Date.now()
-        }]
+  currentView: 'chat',
+  setCurrentView: (view) => set({ currentView: view }),
+
+  // ==================== Conversation Management (NEW) ====================
+
+  conversations: [],
+  currentConversationId: null,
+
+  loadConversations: () => {
+    const conversations = dbService.getConversations()
+    set({ conversations })
+  },
+
+  createConversation: (title) => {
+    const { settings } = get()
+    const id = dbService.createConversation({
+      title: title || `New Conversation ${new Date().toLocaleString()}`,
+      library: settings.selectedLibrary,
+      preview: undefined
+    })
+
+    // Reload conversations list
+    get().loadConversations()
+
+    // Switch to new conversation
+    set({
+      currentConversationId: id,
+      messages: []
+    })
+
+    return id
+  },
+
+  loadConversation: (id) => {
+    const messages = dbService.getMessages(id)
+    set({
+      currentConversationId: id,
+      messages: messages.map(m => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp,
+        library: m.library,
+        hasCode: m.hasCode
       })),
-      setLoading: (loading) => set({ isLoading: loading }),
-      clearMessages: () => set({ messages: [] }),
-      
-      // Code state
-      currentCode: '',
-      setCurrentCode: (code) => set({ currentCode: code }),
-      
-      // Settings state
-      settings: defaultSettings,
-      updateSettings: (newSettings) => set((state) => ({
-        settings: { ...state.settings, ...newSettings }
-      })),
-      
-      // Library state
-      libraries: defaultLibraries,
-      setLibraries: (libraries) => set({ libraries }),
-      getCurrentLibrary: () => {
-        const { libraries, settings } = get()
-        return libraries.find(lib => lib.id === settings.selectedLibrary)
-      },
-      
-      // AI Provider state
-      providers: defaultProviders,
-      setProviders: (providers) => set({ providers }),
-      getCurrentProvider: () => {
-        const { providers, settings } = get()
-        return providers.find(provider => provider.id === settings.selectedProvider)
-      },
-      getCurrentModel: () => {
-        const { providers, settings } = get()
-        const provider = providers.find(p => p.id === settings.selectedProvider)
-        return provider?.models.find(m => m.id === settings.selectedModel)
-      }
-    }),
-    {
-      name: 'xrai-assistant-storage',
-      partialize: (state) => ({
-        settings: state.settings,
-        messages: state.messages,
-        currentCode: state.currentCode,
-        libraries: state.libraries,
-        providers: state.providers
+      currentView: 'chat'
+    })
+  },
+
+  deleteConversation: (id) => {
+    dbService.deleteConversation(id)
+
+    // Reload conversations
+    get().loadConversations()
+
+    // If deleting current conversation, create a new one
+    if (get().currentConversationId === id) {
+      get().createConversation()
+    }
+  },
+
+  updateConversationTitle: (id, title) => {
+    dbService.updateConversation(id, { title })
+    get().loadConversations()
+  },
+
+  searchConversations: (query) => {
+    return dbService.searchConversations(query)
+  },
+
+  // ==================== Chat/Message State ====================
+
+  messages: [],
+  isLoading: false,
+
+  addMessage: (message) => {
+    const { currentConversationId, settings } = get()
+
+    // Create conversation if none exists
+    let conversationId = currentConversationId
+    if (!conversationId) {
+      conversationId = get().createConversation()
+    }
+
+    const timestamp = Date.now()
+    const hasCode = message.content.includes('```')
+
+    // Add to database
+    const id = dbService.addMessage({
+      conversationId,
+      role: message.role,
+      content: message.content,
+      timestamp,
+      hasCode,
+      library: message.library || settings.selectedLibrary
+    })
+
+    // Update local state
+    set((state) => ({
+      messages: [
+        ...state.messages,
+        {
+          id,
+          role: message.role,
+          content: message.content,
+          timestamp,
+          library: message.library,
+          hasCode
+        }
+      ]
+    }))
+
+    // Auto-generate title from first user message
+    if (message.role === 'user' && get().messages.length <= 1) {
+      const title = message.content.length > 50
+        ? message.content.substring(0, 50) + '...'
+        : message.content
+
+      dbService.updateConversation(conversationId, { title })
+      get().loadConversations()
+    }
+  },
+
+  setLoading: (loading) => set({ isLoading: loading }),
+
+  clearMessages: () => {
+    // Create new conversation instead of just clearing
+    get().createConversation('New Conversation')
+  },
+
+  deleteMessage: (id) => {
+    dbService.deleteMessage(id)
+    set((state) => ({
+      messages: state.messages.filter(m => m.id !== id)
+    }))
+  },
+
+  editMessage: (id, newContent) => {
+    dbService.updateMessage(id, newContent)
+    set((state) => ({
+      messages: state.messages.map(m =>
+        m.id === id ? { ...m, content: newContent } : m
+      )
+    }))
+  },
+
+  regenerateMessage: async (id) => {
+    // This will be implemented with AI integration
+    // For now, just delete the message
+    get().deleteMessage(id)
+  },
+
+  // ==================== Code State ====================
+
+  currentCode: '',
+  setCurrentCode: (code) => set({ currentCode: code }),
+
+  // ==================== Settings State ====================
+
+  settings: defaultSettings,
+
+  updateSettings: (newSettings) => {
+    set((state) => {
+      const updated = { ...state.settings, ...newSettings }
+      dbService.saveSettings(updated)
+      return { settings: updated }
+    })
+  },
+
+  // ==================== Library State ====================
+
+  libraries: defaultLibraries,
+  setLibraries: (libraries) => set({ libraries }),
+  getCurrentLibrary: () => {
+    const { libraries, settings } = get()
+    return libraries.find(lib => lib.id === settings.selectedLibrary)
+  },
+
+  // ==================== AI Provider State ====================
+
+  providers: defaultProviders,
+  setProviders: (providers) => set({ providers }),
+  getCurrentProvider: () => {
+    const { providers, settings } = get()
+    return providers.find(provider => provider.id === settings.selectedProvider)
+  },
+  getCurrentModel: () => {
+    const { providers, settings } = get()
+    const provider = providers.find(p => p.id === settings.selectedProvider)
+    return provider?.models.find(m => m.id === settings.selectedModel)
+  },
+
+  // ==================== Code Snippets (NEW) ====================
+
+  snippets: [],
+
+  loadSnippets: (library) => {
+    const snippets = dbService.getSnippets(library)
+    set({ snippets })
+  },
+
+  addSnippet: (snippet) => {
+    const id = dbService.addSnippet(snippet)
+    get().loadSnippets()
+    return id
+  },
+
+  deleteSnippet: (id) => {
+    dbService.deleteSnippet(id)
+    get().loadSnippets()
+  },
+
+  loadSnippetToEditor: (id) => {
+    const { snippets } = get()
+    const snippet = snippets.find(s => s.id === id)
+    if (snippet) {
+      set({
+        currentCode: snippet.code,
+        currentView: 'playground'
       })
     }
-  )
-)
+  },
+
+  searchSnippets: (query) => {
+    return dbService.searchSnippets(query)
+  }
+}))

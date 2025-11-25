@@ -50,6 +50,8 @@ export class AIService {
         return this.callOpenAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens })
       case 'anthropic':
         return this.callAnthropic({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens })
+      case 'google':
+        return this.callGoogleAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens })
       default:
         throw new Error(`Unsupported AI provider: ${provider}`)
     }
@@ -81,6 +83,8 @@ export class AIService {
         return this.streamOpenAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens }, onChunk)
       case 'anthropic':
         return this.streamAnthropic({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens }, onChunk)
+      case 'google':
+        return this.streamGoogleAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens }, onChunk)
       default:
         throw new Error(`Unsupported AI provider: ${provider}`)
     }
@@ -332,5 +336,182 @@ export class AIService {
   ): Promise<void> {
     // Similar streaming implementation for Anthropic
     throw new Error('Anthropic streaming not implemented yet')
+  }
+
+  private async callGoogleAI(options: {
+    prompt: string
+    model: string
+    apiKey: string
+    temperature: number
+    topP: number
+    systemPrompt: string
+    maxTokens: number
+  }): Promise<AIResponse> {
+    const { prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens } = options
+
+    const requestBody: any = {
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }]
+        }
+      ],
+      generationConfig: {
+        temperature,
+        topP,
+        maxOutputTokens: maxTokens
+      }
+    }
+
+    // Add system instruction if provided
+    if (systemPrompt) {
+      requestBody.systemInstruction = {
+        parts: [{ text: systemPrompt }]
+      }
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Google AI API error: ${response.status} - ${error}`)
+    }
+
+    const data = await response.json()
+
+    if (!data.candidates || data.candidates.length === 0) {
+      throw new Error('No response from Google AI')
+    }
+
+    const candidate = data.candidates[0]
+    const content = candidate.content.parts.map((part: any) => part.text).join('')
+
+    return {
+      content,
+      model: data.modelVersion || model,
+      usage: data.usageMetadata ? {
+        prompt_tokens: data.usageMetadata.promptTokenCount || 0,
+        completion_tokens: data.usageMetadata.candidatesTokenCount || 0,
+        total_tokens: data.usageMetadata.totalTokenCount || 0
+      } : undefined
+    }
+  }
+
+  private async streamGoogleAI(
+    options: {
+      prompt: string
+      model: string
+      apiKey: string
+      temperature: number
+      topP: number
+      systemPrompt: string
+      maxTokens: number
+    },
+    onChunk: (chunk: StreamingResponse) => void
+  ): Promise<void> {
+    const { prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens } = options
+
+    const requestBody: any = {
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }]
+        }
+      ],
+      generationConfig: {
+        temperature,
+        topP,
+        maxOutputTokens: maxTokens
+      }
+    }
+
+    // Add system instruction if provided
+    if (systemPrompt) {
+      requestBody.systemInstruction = {
+        parts: [{ text: systemPrompt }]
+      }
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Google AI API error: ${response.status} - ${error}`)
+    }
+
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('No response body reader available')
+    }
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) {
+          onChunk({ content: '', done: true })
+          break
+        }
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Google AI uses newline-delimited JSON
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed) continue
+
+          try {
+            const parsed = JSON.parse(trimmed)
+
+            if (parsed.candidates && parsed.candidates.length > 0) {
+              const candidate = parsed.candidates[0]
+              if (candidate.content && candidate.content.parts) {
+                const content = candidate.content.parts
+                  .map((part: any) => part.text || '')
+                  .join('')
+
+                if (content) {
+                  onChunk({ content, done: false })
+                }
+              }
+
+              // Check if generation is complete
+              if (candidate.finishReason) {
+                onChunk({ content: '', done: true })
+                return
+              }
+            }
+          } catch (e) {
+            // Skip invalid JSON lines
+            console.debug('Skipping invalid JSON line:', trimmed)
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
   }
 }
