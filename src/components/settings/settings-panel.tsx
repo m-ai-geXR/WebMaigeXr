@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Eye, EyeOff, Save, RotateCcw } from 'lucide-react'
+import { X, Eye, EyeOff, Save, RotateCcw, Lock, Unlock, Shield } from 'lucide-react'
 import { useAppStore } from '@/store/app-store'
 import { getParameterDescription, validateApiKey } from '@/lib/utils'
+import { cryptoService } from '@/lib/crypto-service'
+import { dbService } from '@/lib/db-service'
 import toast from 'react-hot-toast'
 
 interface SettingsPanelProps {
@@ -15,6 +17,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const [localSettings, setLocalSettings] = useState(settings)
   const [showApiKeys, setShowApiKeys] = useState<Record<string, boolean>>({})
   const [hasChanges, setHasChanges] = useState(false)
+  const [encryptionEnabled, setEncryptionEnabled] = useState(dbService.hasEncryptedApiKeys())
+  const [isLocked, setIsLocked] = useState(!cryptoService.isUnlocked())
 
   const currentProvider = providers.find(p => p.id === localSettings.selectedProvider)
   const currentModel = currentProvider?.models.find(m => m.id === localSettings.selectedModel)
@@ -50,6 +54,20 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     toast.success('Changes reset')
   }
 
+  const handleLockSession = () => {
+    cryptoService.lockSession()
+    setIsLocked(true)
+    toast.success('Session locked. API keys are encrypted.')
+    // Optionally reload to show unlock screen
+    setTimeout(() => window.location.reload(), 1000)
+  }
+
+  const handleEnableEncryption = async () => {
+    // This would trigger the password setup flow
+    toast('Please refresh the app to enable encryption', { icon: '🔐' })
+    // In a real implementation, you'd navigate to the setup flow
+  }
+
   const parameterDescription = getParameterDescription(localSettings.temperature, localSettings.topP)
 
   return (
@@ -74,6 +92,79 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         {/* Content */}
         <div className="overflow-y-auto max-h-[calc(90vh-8rem)]">
           <div className="p-6 space-y-8">
+            {/* Encryption Section */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                  <Shield className="mr-2" size={20} />
+                  API Key Security
+                </h3>
+              </div>
+
+              <div className={`p-4 rounded-lg border ${
+                encryptionEnabled
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                  : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+              }`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      {encryptionEnabled ? (
+                        <Lock className="text-green-600 dark:text-green-400" size={16} />
+                      ) : (
+                        <Unlock className="text-gray-600 dark:text-gray-400" size={16} />
+                      )}
+                      <h4 className="font-medium text-gray-900 dark:text-white">
+                        {encryptionEnabled ? 'Encryption Enabled' : 'Encryption Disabled'}
+                      </h4>
+                    </div>
+
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {encryptionEnabled ? (
+                        <>
+                          Your API keys are encrypted with AES-256-GCM.
+                          {isLocked ? ' Session is locked.' : ' Session is unlocked.'}
+                        </>
+                      ) : (
+                        'API keys are stored in plain text. Enable encryption for better security.'
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    {encryptionEnabled ? (
+                      <button
+                        onClick={handleLockSession}
+                        disabled={isLocked}
+                        className="flex items-center space-x-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                      >
+                        <Lock size={14} />
+                        <span>{isLocked ? 'Locked' : 'Lock Now'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleEnableEncryption}
+                        className="flex items-center space-x-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        <Shield size={14} />
+                        <span>Enable</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {encryptionEnabled && (
+                  <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
+                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                      <li>• Auto-locks after 30 minutes of inactivity</li>
+                      <li>• Password never stored, only in memory</li>
+                      <li>• 100,000 PBKDF2 iterations</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </section>
+
             {/* AI Provider Section */}
             <section>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">

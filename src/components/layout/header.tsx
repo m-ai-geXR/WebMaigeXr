@@ -1,8 +1,9 @@
 'use client'
 
-import { Settings, Moon, Sun, Monitor } from 'lucide-react'
+import { Settings, Moon, Sun, Monitor, BookMarked } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
+import { useAppStore } from '@/store/app-store'
 
 interface HeaderProps {
   onOpenSettings: () => void
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export function Header({ onOpenSettings }: HeaderProps) {
   const { theme, setTheme } = useTheme()
+  const { setCurrentView } = useAppStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -59,7 +61,16 @@ export function Header({ onOpenSettings }: HeaderProps) {
         >
           {getThemeIcon()}
         </button>
-        
+
+        <button
+          onClick={() => setCurrentView('snippets')}
+          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          aria-label="Open snippets"
+          title="Code Snippets Library"
+        >
+          <BookMarked size={20} />
+        </button>
+
         <button
           onClick={onOpenSettings}
           className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"

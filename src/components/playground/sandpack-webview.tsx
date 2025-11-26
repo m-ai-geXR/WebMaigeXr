@@ -1,15 +1,16 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { 
-  SandpackProvider, 
-  SandpackCodeEditor, 
+import {
+  SandpackProvider,
+  SandpackCodeEditor,
   SandpackPreview,
   SandpackConsole,
-  SandpackLayout 
+  SandpackLayout
 } from "@codesandbox/sandpack-react"
 import { Share, ExternalLink, Eye, EyeOff, Terminal, TerminalSquare, Copy, Mail, MessageCircle } from 'lucide-react'
 import { codeSandboxService } from '@/lib/codesandbox-service'
+import { buildService } from '@/lib/build-service'
 import { sharingService } from '@/lib/sharing-service'
 import { copyToClipboard } from '@/lib/utils'
 import { SandpackErrorBoundary, useErrorHandler } from './error-boundary'
@@ -18,22 +19,24 @@ import toast from 'react-hot-toast'
 
 interface SandpackWebViewProps {
   initialCode: string
-  framework: 'react' | 'react-three-fiber' | 'reactylon'
+  framework: 'react' | 'react-three-fiber' | 'reactylon' | 'babylonjs' | 'threejs'
   onCodeChange?: (code: string) => void
   onSandboxCreated?: (sandboxUrl: string) => void
   showConsole?: boolean
   showPreview?: boolean
   autoReload?: boolean
+  customPackages?: string[]
 }
 
-export function SandpackWebView({ 
-  initialCode, 
-  framework, 
-  onCodeChange, 
+export function SandpackWebView({
+  initialCode,
+  framework,
+  onCodeChange,
   onSandboxCreated,
   showConsole = false,
   showPreview = true,
-  autoReload = true 
+  autoReload = true,
+  customPackages = []
 }: SandpackWebViewProps) {
   const [files, setFiles] = useState<Record<string, string>>({})
   const [template, setTemplate] = useState<string>('react')
@@ -60,36 +63,89 @@ export function SandpackWebView({
       setError(null) // Clear any previous errors
 
       let generatedFiles
+      let sandpackTemplate = 'create-react-app'
 
+      // Handle React-based frameworks with codeSandboxService
       if (framework === 'react-three-fiber') {
         generatedFiles = codeSandboxService.generateR3FFiles(initialCode)
       } else if (framework === 'reactylon') {
         generatedFiles = codeSandboxService.generateReactylonFiles(initialCode)
-      } else {
+      } else if (framework === 'react') {
         generatedFiles = codeSandboxService.generateReactFiles(initialCode)
+      }
+      // Handle non-React frameworks with buildService
+      else if (framework === 'babylonjs') {
+        const buildResult = buildService.buildBabylonJS({
+          code: initialCode,
+          framework: 'babylonjs',
+          packages: customPackages,
+          useNpmPackages: true
+        })
+
+        if (!buildResult.success) {
+          throw new Error(buildResult.error || 'Build failed')
+        }
+
+        generatedFiles = {
+          files: buildResult.files,
+          template: 'vanilla',
+          dependencies: buildResult.dependencies
+        }
+        sandpackTemplate = 'vanilla'
+      } else if (framework === 'threejs') {
+        const buildResult = buildService.buildThreeJS({
+          code: initialCode,
+          framework: 'threejs',
+          packages: customPackages,
+          useNpmPackages: true
+        })
+
+        if (!buildResult.success) {
+          throw new Error(buildResult.error || 'Build failed')
+        }
+
+        generatedFiles = {
+          files: buildResult.files,
+          template: 'vanilla',
+          dependencies: buildResult.dependencies
+        }
+        sandpackTemplate = 'vanilla'
+      } else {
+        throw new Error(`Unsupported framework: ${framework}`)
       }
 
       const filesObj: Record<string, string> = {}
 
       Object.entries(generatedFiles.files).forEach(([path, fileData]) => {
-        if (!fileData || !fileData.code) {
+        const code = typeof fileData === 'string' ? fileData : fileData.code
+        if (!code) {
           throw new Error(`Invalid file data for ${path}`)
         }
-        filesObj[path] = fileData.code
+        filesObj[path] = code
       })
 
       setFiles(filesObj)
-      setTemplate('create-react-app')
+      setTemplate(sandpackTemplate)
 
-      const packageJson = JSON.parse(generatedFiles.files['package.json'].code)
-      setDependencies(packageJson.dependencies || {})
+      // Extract dependencies
+      let deps = {}
+      if ('dependencies' in generatedFiles && generatedFiles.dependencies) {
+        deps = generatedFiles.dependencies
+      } else if (generatedFiles.files['package.json']) {
+        const pkgCode = typeof generatedFiles.files['package.json'] === 'string'
+          ? generatedFiles.files['package.json']
+          : generatedFiles.files['package.json'].code
+        const packageJson = JSON.parse(pkgCode)
+        deps = packageJson.dependencies || {}
+      }
+      setDependencies(deps)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       handleError(error as Error, 'Sandpack initialization')
       setError(`Failed to setup code environment: ${errorMessage}`)
       toast.error('Failed to initialize code environment')
     }
-  }, [initialCode, framework])
+  }, [initialCode, framework, customPackages])
 
   // Close share menu when clicking outside
   useEffect(() => {

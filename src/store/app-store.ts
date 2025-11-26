@@ -9,7 +9,7 @@ import { create } from 'zustand'
 import { dbService, type Conversation, type Message as DBMessage, type AppSettings as DBSettings, type CodeSnippet } from '@/lib/db-service'
 import { defaultLibraries, defaultProviders, defaultSettings } from './store-defaults'
 
-export type ViewType = 'chat' | 'playground' | 'history'
+export type ViewType = 'chat' | 'playground' | 'history' | 'snippets'
 
 export interface Library3D {
   id: string
@@ -120,10 +120,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Initialize SQLite database
       await dbService.initialize()
 
-      // Load settings from database
+      // Load settings from database and merge with defaults
       const dbSettings = dbService.getSettings()
       if (dbSettings) {
-        set({ settings: dbSettings })
+        // Merge database settings with defaults to ensure all fields are present
+        const mergedSettings = { ...defaultSettings, ...dbSettings }
+        set({ settings: mergedSettings })
+      } else {
+        // No settings in database, save defaults
+        dbService.saveSettings(defaultSettings)
       }
 
       // Load conversations list

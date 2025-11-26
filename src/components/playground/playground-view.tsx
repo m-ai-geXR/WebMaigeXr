@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Play, Square, RotateCcw, Download, Upload, Maximize2, Minimize2, ChevronDown, Code as CodeIcon, BookOpen } from 'lucide-react'
+import { Play, Square, RotateCcw, Download, Upload, Maximize2, Minimize2, ChevronDown, Code as CodeIcon, BookOpen, Package } from 'lucide-react'
 import { useAppStore } from '@/store/app-store'
 import { CodeEditor } from './code-editor'
 import { SceneRenderer } from './scene-renderer'
 import { SandpackWebView } from './sandpack-webview'
+import { PackageManager } from './package-manager'
 import { downloadTextFile } from '@/lib/utils'
 import { SandpackErrorBoundary } from './error-boundary'
 import { ExamplesModal } from '../examples/examples-modal'
@@ -13,19 +14,33 @@ import toast from 'react-hot-toast'
 
 export function PlaygroundView() {
   const { currentCode, setCurrentCode, getCurrentLibrary, libraries, updateSettings } = useAppStore()
-  const [isRunning, setIsRunning] = useState(false)
+  const [isRunning, setIsRunning] = useState(true) // Auto-run on load
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [splitView, setSplitView] = useState(true)
   const [showLibraryDropdown, setShowLibraryDropdown] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
+  const [showPackageManager, setShowPackageManager] = useState(false)
+  const [installedPackages, setInstalledPackages] = useState<string[]>([])
+  const [useNpmPackages, setUseNpmPackages] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const libraryDropdownRef = useRef<HTMLDivElement>(null)
   
   const currentLibrary = getCurrentLibrary()
-  
-  // Determine if we should use Sandpack (React frameworks) or iframe (legacy frameworks)
-  const useSandpack = currentLibrary?.id === 'react-three-fiber' || currentLibrary?.id === 'reactylon'
-  const sandpackFramework: 'react-three-fiber' | 'reactylon' = currentLibrary?.id === 'reactylon' ? 'reactylon' : 'react-three-fiber'
+
+  // Determine if we should use Sandpack (React frameworks OR npm mode enabled)
+  const isReactFramework = currentLibrary?.id === 'react-three-fiber' || currentLibrary?.id === 'reactylon'
+  const useSandpack = isReactFramework || (useNpmPackages && (currentLibrary?.id === 'babylonjs' || currentLibrary?.id === 'threejs'))
+
+  // Map library ID to Sandpack framework type
+  const getSandpackFramework = (): 'react-three-fiber' | 'reactylon' | 'babylonjs' | 'threejs' => {
+    if (currentLibrary?.id === 'reactylon') return 'reactylon'
+    if (currentLibrary?.id === 'react-three-fiber') return 'react-three-fiber'
+    if (currentLibrary?.id === 'babylonjs') return 'babylonjs'
+    if (currentLibrary?.id === 'threejs') return 'threejs'
+    return 'react-three-fiber' // fallback
+  }
+
+  const sandpackFramework = getSandpackFramework()
 
   useEffect(() => {
     // Initialize with template if no code exists
@@ -63,14 +78,9 @@ export function PlaygroundView() {
       toast.error('No code to run')
       return
     }
-    
+
     setIsRunning(true)
-    toast.success('Running scene...')
-    
-    // Stop after a brief moment (in real implementation, this would be based on scene state)
-    setTimeout(() => {
-      setIsRunning(false)
-    }, 1000)
+    toast.success('Scene running...')
   }
 
   const handleStopCode = () => {
@@ -127,6 +137,18 @@ export function PlaygroundView() {
 
   const toggleSplitView = () => {
     setSplitView(!splitView)
+  }
+
+  const handleInstallPackage = (packageName: string) => {
+    setInstalledPackages(prev => [...prev, packageName])
+  }
+
+  const handleUninstallPackage = (packageName: string) => {
+    setInstalledPackages(prev => prev.filter(pkg => pkg !== packageName))
+  }
+
+  const handleToggleNpmPackages = (enabled: boolean) => {
+    setUseNpmPackages(enabled)
   }
 
   if (!currentLibrary) {
@@ -187,7 +209,12 @@ export function PlaygroundView() {
           <div className="flex items-center space-x-2">
             {useSandpack && (
               <span className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded font-medium">
-                Sandpack Live
+                {useNpmPackages ? 'npm Bundler' : 'Sandpack Live'}
+              </span>
+            )}
+            {useNpmPackages && !useSandpack && (
+              <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded font-medium">
+                npm Mode
               </span>
             )}
           </div>
@@ -220,6 +247,20 @@ export function PlaygroundView() {
           >
             <BookOpen size={16} />
             <span>Examples</span>
+          </button>
+
+          <button
+            onClick={() => setShowPackageManager(true)}
+            className="flex items-center space-x-1 px-2 py-1.5 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors font-medium"
+            title="Manage npm packages"
+          >
+            <Package size={16} />
+            <span>Packages</span>
+            {installedPackages.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
+                {installedPackages.length}
+              </span>
+            )}
           </button>
 
           <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
@@ -293,6 +334,7 @@ export function PlaygroundView() {
                   showConsole={false}
                   showPreview={true}
                   autoReload={isRunning}
+                  customPackages={installedPackages}
                 />
               </SandpackErrorBoundary>
             ) : (
@@ -317,6 +359,19 @@ export function PlaygroundView() {
 
       {/* Examples Modal */}
       <ExamplesModal isOpen={showExamples} onClose={() => setShowExamples(false)} />
+
+      {/* Package Manager Modal */}
+      {showPackageManager && (
+        <PackageManager
+          framework={currentLibrary.id}
+          installedPackages={installedPackages}
+          onInstallPackage={handleInstallPackage}
+          onUninstallPackage={handleUninstallPackage}
+          onClose={() => setShowPackageManager(false)}
+          useNpmPackages={useNpmPackages}
+          onToggleNpmPackages={handleToggleNpmPackages}
+        />
+      )}
     </div>
   )
 }

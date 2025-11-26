@@ -266,9 +266,10 @@ export function ExamplesModal({ isOpen, onClose }: ExamplesModalProps) {
 
   if (!isOpen) return null
 
+  // Filter by category only - show examples for all libraries
+  // Users can switch libraries from within the modal
   const filteredExamples = EXAMPLES.filter(ex =>
-    (filter === 'all' || ex.category === filter) &&
-    (!currentLibrary || ex.library === currentLibrary.id)
+    filter === 'all' || ex.category === filter
   )
 
   const handleUseExample = (example: Example) => {
@@ -303,7 +304,7 @@ export function ExamplesModal({ isOpen, onClose }: ExamplesModalProps) {
               Code Examples
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {currentLibrary ? `Examples for ${currentLibrary.name}` : 'Browse examples across all libraries'}
+              Browse examples across all 3D libraries
             </p>
           </div>
           <button

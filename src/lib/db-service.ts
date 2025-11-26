@@ -560,6 +560,35 @@ class DatabaseService {
     }
   }
 
+  // ==================== Encryption Methods ====================
+
+  public saveEncryptedApiKeys(encryptedData: string): void {
+    if (!this.db) throw new Error('Database not initialized')
+
+    this.db.run(`
+      INSERT OR REPLACE INTO settings (key, value)
+      VALUES ('encrypted_api_keys', ?)
+    `, [encryptedData])
+
+    this.persist()
+  }
+
+  public getEncryptedApiKeys(): string | null {
+    if (!this.db) throw new Error('Database not initialized')
+
+    const results = this.db.exec(`
+      SELECT value FROM settings WHERE key = 'encrypted_api_keys'
+    `)
+
+    if (results.length === 0 || results[0].values.length === 0) return null
+
+    return results[0].values[0][0] as string
+  }
+
+  public hasEncryptedApiKeys(): boolean {
+    return this.getEncryptedApiKeys() !== null
+  }
+
   // ==================== Code Snippets Methods ====================
 
   public addSnippet(snippet: Omit<CodeSnippet, 'id' | 'createdAt' | 'updatedAt'>): string {
