@@ -1,6 +1,6 @@
 # CLAUDE.md - WebMaigeXR
 
-This file provides guidance to Claude Code (claude.ai/code) when working with the Next.js web implementation of XRAiAssistant.
+This file provides guidance to Claude Code (claude.ai/code) when working with the Next.js web implementation of m{ai}geXR.
 
 **WebMaigeXR** is an AI-powered Extended Reality development platform built with Next.js that combines professional 3D libraries, multi-provider AI integration, and real-time code execution into a comprehensive web-based XR development environment.
 
@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 ### What is WebMaigeXR?
 
-WebMaigeXR (formerly part of the XRAiAssistant monorepo) is now a standalone Next.js 14 web application providing:
+WebMaigeXR (formerly part of the m{ai}geXR monorepo) is now a standalone Next.js 14 web application providing:
 
 - **AI-powered 3D development** - Natural language to working 3D scenes
 - **Multi-library support** - Babylon.js, Three.js, React Three Fiber

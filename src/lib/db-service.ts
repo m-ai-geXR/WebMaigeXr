@@ -180,6 +180,35 @@ class DatabaseService {
       )
     `)
 
+    // Favorites table
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS favorites (
+        id TEXT PRIMARY KEY,
+        message_id TEXT NOT NULL,
+        conversation_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        code_content TEXT NOT NULL,
+        library_id TEXT NOT NULL,
+        model_used TEXT,
+        screenshot_base64 TEXT,
+        created_at INTEGER NOT NULL,
+        favorite_order INTEGER NOT NULL,
+        tags TEXT
+      )
+    `)
+
+    // RAG documents table
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS rag_documents (
+        id TEXT PRIMARY KEY,
+        source_type TEXT NOT NULL,
+        source_id TEXT NOT NULL,
+        chunk_text TEXT NOT NULL,
+        chunk_index INTEGER NOT NULL,
+        metadata TEXT
+      )
+    `)
+
     // Create indexes for better performance
     this.db.run(`
       CREATE INDEX IF NOT EXISTS idx_messages_conversation
@@ -194,6 +223,16 @@ class DatabaseService {
     this.db.run(`
       CREATE INDEX IF NOT EXISTS idx_snippets_library
       ON code_snippets(library, updated_at DESC)
+    `)
+
+    this.db.run(`
+      CREATE INDEX IF NOT EXISTS idx_favorites_created
+      ON favorites(created_at DESC)
+    `)
+
+    this.db.run(`
+      CREATE INDEX IF NOT EXISTS idx_rag_documents_source
+      ON rag_documents(source_type, source_id)
     `)
 
     console.log('✅ Database tables created successfully')

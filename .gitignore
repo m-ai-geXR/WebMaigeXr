@@ -229,3 +229,41 @@ build.log
 
 # Room schema export (optional - some teams track this)
 # /app/schemas/
+
+# ============================================================================
+# Electron Desktop Build
+# ============================================================================
+
+# Electron build output
+/dist/
+/electron/dist/
+
+# Native dependencies rebuild cache
+/.electron-rebuild/
+
+# Electron builder cache
+/electron-builder-cache/
+
+# Mac notarization
+*.dmg
+*.pkg
+*.app
+
+# Windows installer
+*.exe
+*.msi
+*.nsis
+
+# Linux packages
+*.AppImage
+*.deb
+*.rpm
+*.snap
+*.flatpak
+
+# Release drafts
+release/
+releases/
+
+# Portable builds
+portable/
