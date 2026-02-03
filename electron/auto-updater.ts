@@ -5,17 +5,38 @@
  * Uses electron-updater for checking and applying updates from GitHub releases.
  */
 
-import { autoUpdater, UpdateInfo } from 'electron-updater'
 import { BrowserWindow, dialog, app } from 'electron'
-import log from 'electron-log'
 
-// Configure logging
-autoUpdater.logger = log
-log.transports.file.level = 'info'
+// Lazy-load electron-updater to avoid fs-extra issues on startup
+let autoUpdater: any = null
+let log: any = console
 
-// Don't auto-download updates - let user decide
-autoUpdater.autoDownload = false
-autoUpdater.autoInstallOnAppQuit = true
+async function initModules() {
+  if (autoUpdater) return true
+
+  try {
+    const updaterModule = await import('electron-updater')
+    autoUpdater = updaterModule.autoUpdater
+
+    try {
+      const logModule = await import('electron-log')
+      log = logModule.default
+      autoUpdater.logger = log
+      log.transports.file.level = 'info'
+    } catch (e) {
+      console.warn('electron-log not available, using console')
+    }
+
+    // Don't auto-download updates - let user decide
+    autoUpdater.autoDownload = false
+    autoUpdater.autoInstallOnAppQuit = true
+
+    return true
+  } catch (error) {
+    console.error('Failed to load electron-updater:', error)
+    return false
+  }
+}
 
 // Store reference to main window for notifications
 let mainWindow: BrowserWindow | null = null
@@ -24,8 +45,14 @@ let mainWindow: BrowserWindow | null = null
  * Initialize the auto-updater
  * @param window The main browser window for notifications
  */
-export function initAutoUpdater(window: BrowserWindow): void {
+export async function initAutoUpdater(window: BrowserWindow): Promise<void> {
   mainWindow = window
+
+  const initialized = await initModules()
+  if (!initialized) {
+    console.warn('Auto-updater could not be initialized')
+    return
+  }
 
   // Check for updates on startup (after a short delay)
   setTimeout(() => {
@@ -40,6 +67,11 @@ export function initAutoUpdater(window: BrowserWindow): void {
  * Check for updates manually
  */
 export async function checkForUpdates(): Promise<void> {
+  if (!autoUpdater) {
+    const initialized = await initModules()
+    if (!initialized) return
+  }
+
   try {
     log.info('Checking for updates...')
     await autoUpdater.checkForUpdates()
@@ -52,6 +84,8 @@ export async function checkForUpdates(): Promise<void> {
  * Download the available update
  */
 export async function downloadUpdate(): Promise<void> {
+  if (!autoUpdater) return
+
   try {
     log.info('Downloading update...')
     await autoUpdater.downloadUpdate()
@@ -64,6 +98,7 @@ export async function downloadUpdate(): Promise<void> {
  * Install the update and restart the app
  */
 export function installUpdate(): void {
+  if (!autoUpdater) return
   autoUpdater.quitAndInstall(false, true)
 }
 
@@ -71,12 +106,14 @@ export function installUpdate(): void {
  * Set up auto-updater event handlers
  */
 function setupEventHandlers(): void {
+  if (!autoUpdater) return
+
   autoUpdater.on('checking-for-update', () => {
     log.info('Checking for update...')
     sendStatusToWindow('checking-for-update')
   })
 
-  autoUpdater.on('update-available', (info: UpdateInfo) => {
+  autoUpdater.on('update-available', (info: any) => {
     log.info('Update available:', info.version)
     sendStatusToWindow('update-available', info)
 
@@ -98,7 +135,7 @@ function setupEventHandlers(): void {
     }
   })
 
-  autoUpdater.on('update-not-available', (info: UpdateInfo) => {
+  autoUpdater.on('update-not-available', (info: any) => {
     log.info('Update not available. Current version is up to date.')
     sendStatusToWindow('update-not-available', info)
   })
@@ -108,13 +145,13 @@ function setupEventHandlers(): void {
     sendStatusToWindow('error', { message: err.message })
   })
 
-  autoUpdater.on('download-progress', (progressObj) => {
+  autoUpdater.on('download-progress', (progressObj: any) => {
     const logMessage = `Download speed: ${progressObj.bytesPerSecond} - Downloaded ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`
     log.info(logMessage)
     sendStatusToWindow('download-progress', progressObj)
   })
 
-  autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
+  autoUpdater.on('update-downloaded', (info: any) => {
     log.info('Update downloaded:', info.version)
     sendStatusToWindow('update-downloaded', info)
 
@@ -155,6 +192,13 @@ export async function getUpdateInfo(): Promise<{
   latestVersion?: string
 }> {
   const currentVersion = app.getVersion()
+
+  if (!autoUpdater) {
+    const initialized = await initModules()
+    if (!initialized) {
+      return { currentVersion, updateAvailable: false }
+    }
+  }
 
   try {
     const result = await autoUpdater.checkForUpdates()
