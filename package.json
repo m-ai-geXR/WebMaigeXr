@@ -22,6 +22,7 @@
     "build:electron:all": "pnpm run build:static && pnpm run electron:compile && electron-builder -mwl",
     "electron:compile": "tsc -p tsconfig.electron.json",
     "electron:dev": "cross-env NODE_ENV=development electron .",
+    "electron:start": "cross-env NODE_ENV=production electron .",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",

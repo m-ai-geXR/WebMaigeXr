@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AppInitializer } from '@/components/app-initializer'
 import { Toaster } from 'react-hot-toast'
+import { AppConfig } from '@/lib/app-config'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -41,6 +43,14 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#3b82f6" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
       </head>
+      {AppConfig.adsEnabled && (
+        <Script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AppConfig.adsensePublisherId}`}
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+      )}
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
