@@ -8,6 +8,8 @@ import { SnippetLibrary } from '@/components/snippets/snippet-library'
 import { SettingsPanel } from '@/components/settings/settings-panel'
 import { Header } from '@/components/layout/header'
 import { BottomNavigation } from '@/components/layout/bottom-navigation'
+import { AdBanner } from '@/components/ads/AdBanner'
+import { AdInterstitial } from '@/components/ads/AdInterstitial'
 import { useAppStore } from '@/store/app-store'
 
 export default function Home() {
@@ -45,8 +47,10 @@ export default function Home() {
         {renderCurrentView()}
       </main>
       
+      <AdBanner />
       <BottomNavigation />
-      
+      <AdInterstitial />
+
       {showSettings && (
         <SettingsPanel onClose={() => setShowSettings(false)} />
       )}

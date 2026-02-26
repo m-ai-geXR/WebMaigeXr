@@ -8,6 +8,7 @@ import { SceneRenderer } from './scene-renderer'
 import { SandpackWebView } from './sandpack-webview'
 import { PackageManager } from './package-manager'
 import { downloadTextFile } from '@/lib/utils'
+import { adManager } from '@/lib/ad-manager'
 import { SandpackErrorBoundary } from './error-boundary'
 import { ExamplesModal } from '../examples/examples-modal'
 import toast from 'react-hot-toast'
@@ -79,6 +80,7 @@ export function PlaygroundView() {
       return
     }
 
+    adManager.onSceneRun()
     setIsRunning(true)
     toast.success('Scene running...')
   }
