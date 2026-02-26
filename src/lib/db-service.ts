@@ -92,9 +92,10 @@ class DatabaseService {
       // Dynamically import sql.js only on the client
       const initSqlJs = (await import('sql.js')).default
 
-      // Initialize sql.js with WebAssembly
+      // Initialize sql.js with WebAssembly — use locally bundled WASM so this
+      // works in Electron (no network required) and offline web contexts.
       this.SQL = await initSqlJs({
-        locateFile: (file: string) => `https://sql.js.org/dist/${file}`
+        locateFile: (file: string) => `/sql-wasm/${file}`
       })
 
       // Try to load existing database from localStorage
