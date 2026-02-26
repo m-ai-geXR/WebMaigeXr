@@ -59,14 +59,15 @@ export function SceneRenderer({ code, library, isRunning }: SceneRendererProps) 
   }
 
   const createSceneHTML = (userCode: string, library: Library3D): string => {
-    // A-Frame: Check if it's a full HTML document
+    // ALL libraries: if the AI generated a complete HTML document, use it as-is
+    const trimmedCode = userCode.trim()
+    if (trimmedCode.startsWith('<!DOCTYPE') || trimmedCode.toLowerCase().startsWith('<html')) {
+      return userCode
+    }
+
+    // A-Frame: wrap bare tags in minimal HTML shell
     if (library.id === 'aframe') {
-      if (userCode.includes('<!DOCTYPE html>') || userCode.includes('<html')) {
-        // User provided full HTML, use as-is
-        return userCode
-      } else {
-        // User provided just A-Frame tags, wrap in HTML
-        return `
+      return `
 <!DOCTYPE html>
 <html>
   <head>
@@ -81,7 +82,58 @@ export function SceneRenderer({ code, library, isRunning }: SceneRendererProps) 
     ${userCode}
   </body>
 </html>`
-      }
+    }
+
+    // Three.js: if code uses ES6 import statements, serve as a proper ES module
+    // with an importmap so bare specifiers like 'three' and 'three/addons/' resolve
+    if (library.id === 'threejs' && /^\s*import\s+/m.test(userCode)) {
+      const processedCode = userCode.replace(
+        'document.body.appendChild(renderer.domElement)',
+        'document.getElementById("scene-container").appendChild(renderer.domElement)'
+      )
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Scene</title>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+        canvas, #scene-container { width: 100% !important; height: 100% !important; display: block; }
+        #error-overlay {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: rgba(239,68,68,0.95); color: white;
+            padding: 1rem; z-index: 1000;
+            font-family: monospace; font-size: 13px; display: none;
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.171.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.171.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="error-overlay"></div>
+    <div id="scene-container"></div>
+    <script>
+        window.addEventListener('error', function(e) {
+            var d = document.getElementById('error-overlay');
+            if (d) { d.textContent = 'Error: ' + (e.error ? e.error.message : e.message); d.style.display = 'block'; }
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            var d = document.getElementById('error-overlay');
+            if (d) { d.textContent = 'Error: ' + (e.reason ? (e.reason.message || e.reason) : 'Unhandled rejection'); d.style.display = 'block'; }
+        });
+    </script>
+    <script type="module">
+        ${processedCode}
+    </script>
+</body>
+</html>`
     }
 
     const cdnLinks = library.cdnUrls.map(url => `<script src="${url}"></script>`).join('\n')
