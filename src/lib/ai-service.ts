@@ -37,7 +37,7 @@ export class AIService {
       maxTokens?: number
     }
   ): Promise<AIResponse> {
-    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, systemPrompt = '', maxTokens = 2048 } = options
+    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, systemPrompt = '', maxTokens = 8192 } = options
 
     if (!apiKey || apiKey.trim() === '') {
       throw new Error(`API key required for ${provider}`)
@@ -70,7 +70,7 @@ export class AIService {
     },
     onChunk: (chunk: StreamingResponse) => void
   ): Promise<void> {
-    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, systemPrompt = '', maxTokens = 2048 } = options
+    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, systemPrompt = '', maxTokens = 8192 } = options
 
     if (!apiKey || apiKey.trim() === '') {
       throw new Error(`API key required for ${provider}`)
@@ -442,7 +442,7 @@ export class AIService {
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`,
       {
         method: 'POST',
         headers: {
@@ -475,16 +475,19 @@ export class AIService {
 
         buffer += decoder.decode(value, { stream: true })
 
-        // Google AI uses newline-delimited JSON
+        // Google AI SSE format: each event is "data: {json}\n\n"
         const lines = buffer.split('\n')
         buffer = lines.pop() || ''
 
         for (const line of lines) {
           const trimmed = line.trim()
-          if (!trimmed) continue
+          if (!trimmed || !trimmed.startsWith('data: ')) continue
+
+          const jsonStr = trimmed.slice(6) // strip "data: " prefix
+          if (!jsonStr) continue
 
           try {
-            const parsed = JSON.parse(trimmed)
+            const parsed = JSON.parse(jsonStr)
 
             if (parsed.candidates && parsed.candidates.length > 0) {
               const candidate = parsed.candidates[0]
