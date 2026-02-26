@@ -8,6 +8,7 @@
 import { create } from 'zustand'
 import { dbService, type Conversation, type Message as DBMessage, type AppSettings as DBSettings, type CodeSnippet } from '@/lib/db-service'
 import { defaultLibraries, defaultProviders, defaultSettings } from './store-defaults'
+import { AppConfig } from '@/lib/app-config'
 
 export type ViewType = 'chat' | 'playground' | 'history' | 'snippets'
 
@@ -108,6 +109,10 @@ interface AppState {
   deleteSnippet: (id: string) => void
   loadSnippetToEditor: (id: string) => void
   searchSnippets: (query: string) => CodeSnippet[]
+
+  // Monetization state
+  isPremiumUser: boolean
+  setPremiumUser: (value: boolean) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -387,5 +392,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   searchSnippets: (query) => {
     return dbService.searchSnippets(query)
-  }
+  },
+
+  // ==================== Monetization ====================
+
+  isPremiumUser: AppConfig.forcePremiumMode || false,
+  setPremiumUser: (value) => set({ isPremiumUser: value }),
 }))
