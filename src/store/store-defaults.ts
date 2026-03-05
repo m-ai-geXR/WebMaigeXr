@@ -441,28 +441,46 @@ export const defaultProviders: AIProvider[] = [
     baseUrl: 'https://api.openai.com/v1',
     models: [
       {
+        id: 'gpt-5.2',
+        name: 'GPT-5.2',
+        description: 'Best for coding and agentic tasks, 400K context',
+        pricing: '$1.75/1M in · $14.00/1M out'
+      },
+      {
+        id: 'gpt-5.2-pro',
+        name: 'GPT-5.2 Pro',
+        description: 'Smartest and most trustworthy, highest accuracy',
+        pricing: 'Premium tier'
+      },
+      {
+        id: 'gpt-5.2-chat-latest',
+        name: 'GPT-5.2 Chat (Latest)',
+        description: 'Latest ChatGPT model, auto-updates, 128K context',
+        pricing: '$1.75/1M in · $14.00/1M out'
+      },
+      {
+        id: 'o3-mini-2025-01-31',
+        name: 'o3 Mini',
+        description: 'Fast reasoning model, 200K context',
+        pricing: '$1.10/1M in · $4.40/1M out'
+      },
+      {
+        id: 'o1-2024-12-17',
+        name: 'o1',
+        description: 'Advanced reasoning for complex problems, 200K context',
+        pricing: '$15.00/1M in · $60.00/1M out'
+      },
+      {
         id: 'gpt-4o',
         name: 'GPT-4o',
-        description: 'Most capable multimodal model',
-        pricing: '$2.50/1M tokens'
+        description: 'Versatile multimodal model, 128K context',
+        pricing: '$2.50/1M in · $10.00/1M out'
       },
       {
         id: 'gpt-4o-mini',
         name: 'GPT-4o Mini',
-        description: 'Fast and affordable',
-        pricing: '$0.15/1M tokens'
-      },
-      {
-        id: 'o3-mini',
-        name: 'o3 Mini',
-        description: 'Fast reasoning model',
-        pricing: '$1.10/1M tokens'
-      },
-      {
-        id: 'o1',
-        name: 'o1',
-        description: 'Advanced reasoning, complex problems',
-        pricing: '$15.00/1M tokens'
+        description: 'Fast and affordable, 128K context',
+        pricing: '$0.15/1M in · $0.60/1M out'
       }
     ]
   },
@@ -503,28 +521,28 @@ export const defaultProviders: AIProvider[] = [
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     models: [
       {
-        id: 'gemini-2.5-flash',
-        name: 'Gemini 2.5 Flash',
-        description: 'Fast with thinking, free tier',
+        id: 'gemini-3.1-pro-preview',
+        name: 'Gemini 3.1 Pro',
+        description: 'Latest and most powerful Gemini — reasoning, coding, multimodal, 1M context',
         pricing: 'Free tier available'
       },
       {
         id: 'gemini-2.5-pro',
         name: 'Gemini 2.5 Pro',
-        description: 'Best reasoning, 1M context, free tier',
-        pricing: 'Free tier available'
+        description: 'High-capability reasoning & coding, 1M context',
+        pricing: '$1.25/1M in · $10.00/1M out'
       },
       {
-        id: 'gemini-2.0-flash',
-        name: 'Gemini 2.0 Flash',
-        description: 'Stable, fast multimodal model',
-        pricing: 'Free tier available'
+        id: 'gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        description: 'Best price/performance, 1M context, free tier',
+        pricing: '$0.30/1M in · $2.50/1M out'
       },
       {
-        id: 'gemini-2.0-flash-lite',
-        name: 'Gemini 2.0 Flash Lite',
-        description: 'Lightest and cheapest Gemini',
-        pricing: 'Free tier available'
+        id: 'gemini-2.5-flash-lite',
+        name: 'Gemini 2.5 Flash Lite',
+        description: 'Fastest and lightest Gemini, 1M context',
+        pricing: '$0.10/1M in · $0.40/1M out'
       }
     ]
   },
@@ -534,22 +552,34 @@ export const defaultProviders: AIProvider[] = [
     baseUrl: 'https://api.x.ai/v1',
     models: [
       {
+        id: 'grok-4-0709',
+        name: 'Grok 4',
+        description: 'xAI flagship — advanced reasoning, coding, 256K context',
+        pricing: '$3.00/1M in · $15.00/1M out'
+      },
+      {
+        id: 'grok-4-fast-reasoning',
+        name: 'Grok 4 Fast Reasoning',
+        description: 'Fast reasoning, massive 2M context window',
+        pricing: '$0.20/1M in · $0.50/1M out'
+      },
+      {
         id: 'grok-3',
         name: 'Grok 3',
-        description: 'xAI flagship model, strong at coding',
-        pricing: '$3.00/1M tokens'
+        description: 'General-purpose, strong at coding, 131K context',
+        pricing: '$3.00/1M in · $15.00/1M out'
       },
       {
         id: 'grok-3-mini',
         name: 'Grok 3 Mini',
-        description: 'Fast reasoning model from xAI',
-        pricing: '$0.30/1M tokens'
+        description: 'Lightweight reasoning, fast and cost-effective, 131K context',
+        pricing: '$0.30/1M in · $0.50/1M out'
       },
       {
-        id: 'grok-2',
-        name: 'Grok 2',
-        description: 'Previous generation, still capable',
-        pricing: '$2.00/1M tokens'
+        id: 'grok-code-fast-1',
+        name: 'Grok Code Fast',
+        description: 'Coding specialist with reasoning, optimized for code generation, 256K context',
+        pricing: '$0.20/1M in · $1.50/1M out'
       }
     ]
   },
@@ -579,7 +609,7 @@ export const defaultSettings: AppSettings = {
     codesandbox: ''
   },
   selectedProvider: 'together',
-  selectedModel: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free',
+  selectedModel: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free', // free default
   selectedLibrary: 'react-three-fiber',
   temperature: 0.7,
   topP: 0.9,

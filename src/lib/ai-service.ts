@@ -15,15 +15,15 @@ export interface StreamingResponse {
   done: boolean
 }
 
-// Maximum output tokens per provider (provider-imposed hard limits)
+// Maximum output tokens per provider
 function getMaxTokensForProvider(provider: string): number {
   switch (provider) {
-    case 'anthropic': return 64000   // Claude 3.5/4 supports up to 64K output
+    case 'anthropic': return 64000   // Claude 4 supports up to 64K output
     case 'google':    return 65536   // Gemini 2.5 Pro/Flash max output
     case 'together':  return 32768   // Most Together AI models support 32K
-    case 'openai':    return 16384   // GPT-4o supports 16K output
-    case 'xai':       return 32768   // Grok 3 supports 32K output
-    default:          return 16384
+    case 'openai':    return 65536   // GPT-5.2 supports large outputs
+    case 'xai':       return 32768   // Grok 4 supports 32K output
+    default:          return 32768
   }
 }
 
