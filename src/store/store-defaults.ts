@@ -392,34 +392,46 @@ export const defaultProviders: AIProvider[] = [
     baseUrl: 'https://api.together.xyz/v1',
     models: [
       {
-        id: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free',
-        name: 'DeepSeek R1 70B',
-        description: 'Advanced reasoning model (FREE)',
+        id: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free',
+        name: 'Llama 3.3 70B (FREE)',
+        description: 'Latest Meta large model, free tier',
         pricing: 'Free'
+      },
+      {
+        id: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free',
+        name: 'DeepSeek R1 70B (FREE)',
+        description: 'Advanced reasoning distill, free tier',
+        pricing: 'Free'
+      },
+      {
+        id: 'deepseek-ai/DeepSeek-V3',
+        name: 'DeepSeek V3',
+        description: 'Latest DeepSeek MoE flagship model',
+        pricing: '$1.25/1M tokens'
+      },
+      {
+        id: 'deepseek-ai/DeepSeek-R1',
+        name: 'DeepSeek R1',
+        description: 'Full reasoning model, chain-of-thought',
+        pricing: '$3.00/1M tokens'
       },
       {
         id: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
         name: 'Llama 3.3 70B',
-        description: 'Latest Meta large model (FREE)',
-        pricing: 'Free'
-      },
-      {
-        id: 'meta-llama/Llama-3-8B-Instruct-Lite',
-        name: 'Llama 3 8B Lite',
-        description: 'Fast and efficient model',
-        pricing: '$0.10/1M tokens'
-      },
-      {
-        id: 'Qwen/Qwen2.5-7B-Instruct-Turbo',
-        name: 'Qwen 2.5 7B Turbo',
-        description: 'Fast coding specialist',
-        pricing: '$0.30/1M tokens'
+        description: 'Latest Meta large model',
+        pricing: '$0.88/1M tokens'
       },
       {
         id: 'Qwen/Qwen2.5-Coder-32B-Instruct',
         name: 'Qwen 2.5 Coder 32B',
         description: 'Advanced coding & XR specialist',
         pricing: '$0.80/1M tokens'
+      },
+      {
+        id: 'Qwen/Qwen2.5-72B-Instruct-Turbo',
+        name: 'Qwen 2.5 72B Turbo',
+        description: 'Large Qwen model, strong at code',
+        pricing: '$1.20/1M tokens'
       }
     ]
   },
@@ -432,13 +444,25 @@ export const defaultProviders: AIProvider[] = [
         id: 'gpt-4o',
         name: 'GPT-4o',
         description: 'Most capable multimodal model',
-        pricing: '$5.00/1M tokens'
+        pricing: '$2.50/1M tokens'
       },
       {
         id: 'gpt-4o-mini',
         name: 'GPT-4o Mini',
-        description: 'Fast and affordable model',
+        description: 'Fast and affordable',
         pricing: '$0.15/1M tokens'
+      },
+      {
+        id: 'o3-mini',
+        name: 'o3 Mini',
+        description: 'Fast reasoning model',
+        pricing: '$1.10/1M tokens'
+      },
+      {
+        id: 'o1',
+        name: 'o1',
+        description: 'Advanced reasoning, complex problems',
+        pricing: '$15.00/1M tokens'
       }
     ]
   },
@@ -448,16 +472,28 @@ export const defaultProviders: AIProvider[] = [
     baseUrl: 'https://api.anthropic.com',
     models: [
       {
-        id: 'claude-3-5-sonnet-20241022',
-        name: 'Claude 3.5 Sonnet',
-        description: 'Most capable model for complex tasks',
+        id: 'claude-opus-4-6',
+        name: 'Claude Opus 4.6',
+        description: 'Most capable Claude model',
+        pricing: '$15.00/1M tokens'
+      },
+      {
+        id: 'claude-sonnet-4-6',
+        name: 'Claude Sonnet 4.6',
+        description: 'Best balance of speed and intelligence',
         pricing: '$3.00/1M tokens'
       },
       {
-        id: 'claude-3-haiku-20240307',
-        name: 'Claude 3 Haiku',
-        description: 'Fast and affordable model',
-        pricing: '$0.25/1M tokens'
+        id: 'claude-haiku-4-5-20251001',
+        name: 'Claude Haiku 4.5',
+        description: 'Fastest and most affordable Claude',
+        pricing: '$0.80/1M tokens'
+      },
+      {
+        id: 'claude-3-5-sonnet-20241022',
+        name: 'Claude 3.5 Sonnet',
+        description: 'Reliable workhorse for complex tasks',
+        pricing: '$3.00/1M tokens'
       }
     ]
   },
@@ -469,20 +505,51 @@ export const defaultProviders: AIProvider[] = [
       {
         id: 'gemini-2.5-flash',
         name: 'Gemini 2.5 Flash',
-        description: 'Fast model with improved performance (FREE tier)',
+        description: 'Fast with thinking, free tier',
         pricing: 'Free tier available'
       },
       {
         id: 'gemini-2.5-pro',
         name: 'Gemini 2.5 Pro',
-        description: 'Advanced reasoning, 1M context (FREE tier)',
+        description: 'Best reasoning, 1M context, free tier',
         pricing: 'Free tier available'
       },
       {
-        id: 'gemini-3-pro-preview',
-        name: 'Gemini 3.0 Pro Preview',
-        description: 'Thinking mode, advanced reasoning',
+        id: 'gemini-2.0-flash',
+        name: 'Gemini 2.0 Flash',
+        description: 'Stable, fast multimodal model',
         pricing: 'Free tier available'
+      },
+      {
+        id: 'gemini-2.0-flash-lite',
+        name: 'Gemini 2.0 Flash Lite',
+        description: 'Lightest and cheapest Gemini',
+        pricing: 'Free tier available'
+      }
+    ]
+  },
+  {
+    id: 'xai',
+    name: 'xAI',
+    baseUrl: 'https://api.x.ai/v1',
+    models: [
+      {
+        id: 'grok-3',
+        name: 'Grok 3',
+        description: 'xAI flagship model, strong at coding',
+        pricing: '$3.00/1M tokens'
+      },
+      {
+        id: 'grok-3-mini',
+        name: 'Grok 3 Mini',
+        description: 'Fast reasoning model from xAI',
+        pricing: '$0.30/1M tokens'
+      },
+      {
+        id: 'grok-2',
+        name: 'Grok 2',
+        description: 'Previous generation, still capable',
+        pricing: '$2.00/1M tokens'
       }
     ]
   },
@@ -504,14 +571,15 @@ export const defaultProviders: AIProvider[] = [
 // Default settings
 export const defaultSettings: AppSettings = {
   apiKeys: {
-    together: 'changeMe',
+    together: '',
     openai: '',
     anthropic: '',
     google: '',
+    xai: '',
     codesandbox: ''
   },
   selectedProvider: 'together',
-  selectedModel: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free',
+  selectedModel: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free',
   selectedLibrary: 'react-three-fiber',
   temperature: 0.7,
   topP: 0.9,

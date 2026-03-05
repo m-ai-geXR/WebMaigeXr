@@ -129,7 +129,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       const dbSettings = dbService.getSettings()
       if (dbSettings) {
         // Merge database settings with defaults to ensure all fields are present
-        const mergedSettings = { ...defaultSettings, ...dbSettings }
+        let mergedSettings = { ...defaultSettings, ...dbSettings }
+
+        // Reset provider/model selection if the saved model no longer exists in the current provider list
+        const savedProvider = defaultProviders.find(p => p.id === mergedSettings.selectedProvider)
+        const savedModel = savedProvider?.models.find(m => m.id === mergedSettings.selectedModel)
+        if (!savedProvider || !savedModel) {
+          mergedSettings.selectedProvider = defaultSettings.selectedProvider
+          mergedSettings.selectedModel = defaultSettings.selectedModel
+        }
+
         set({ settings: mergedSettings })
       } else {
         // No settings in database, save defaults

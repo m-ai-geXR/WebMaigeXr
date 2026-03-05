@@ -8,8 +8,8 @@
 // Together AI embedding endpoint
 const TOGETHER_AI_EMBEDDING_URL = 'https://api.together.xyz/v1/embeddings'
 
-// Embedding model - small, fast, good quality
-const EMBEDDING_MODEL = 'togethercomputer/m2-bert-80M-8k-retrieval'
+// Embedding model - serverless, 768-dim, 512 token context
+const EMBEDDING_MODEL = 'BAAI/bge-base-en-v1.5'
 
 // Embedding dimension for this model
 export const EMBEDDING_DIMENSION = 768
@@ -35,8 +35,8 @@ export async function generateEmbedding(
     throw new Error('Together AI API key required for embeddings')
   }
 
-  // Truncate text if too long (8k tokens ~ 32k chars)
-  const truncatedText = text.length > 30000 ? text.substring(0, 30000) : text
+  // Truncate text to fit within 512 token limit (~2000 chars for BAAI/bge-base-en-v1.5)
+  const truncatedText = text.length > 2000 ? text.substring(0, 2000) : text
 
   const response = await fetch(TOGETHER_AI_EMBEDDING_URL, {
     method: 'POST',
@@ -82,9 +82,9 @@ export async function generateBatchEmbeddings(
     return { embeddings: [], totalTokens: 0 }
   }
 
-  // Truncate texts if too long
+  // Truncate texts to fit within 512 token limit (~2000 chars for BAAI/bge-base-en-v1.5)
   const truncatedTexts = texts.map(text =>
-    text.length > 30000 ? text.substring(0, 30000) : text
+    text.length > 2000 ? text.substring(0, 2000) : text
   )
 
   // Process in batches of 8 to avoid rate limits

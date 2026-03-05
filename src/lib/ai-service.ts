@@ -15,14 +15,49 @@ export interface StreamingResponse {
   done: boolean
 }
 
+// Maximum output tokens per provider (provider-imposed hard limits)
+function getMaxTokensForProvider(provider: string): number {
+  switch (provider) {
+    case 'anthropic': return 64000   // Claude 3.5/4 supports up to 64K output
+    case 'google':    return 65536   // Gemini 2.5 Pro/Flash max output
+    case 'together':  return 32768   // Most Together AI models support 32K
+    case 'openai':    return 16384   // GPT-4o supports 16K output
+    case 'xai':       return 32768   // Grok 3 supports 32K output
+    default:          return 16384
+  }
+}
+
+// Domains that block browser CORS — requests must go through the server-side proxy
+const PROXY_DOMAINS = ['api.anthropic.com', 'api.x.ai']
+
 export class AIService {
   private static instance: AIService
-  
+
   public static getInstance(): AIService {
     if (!AIService.instance) {
       AIService.instance = new AIService()
     }
     return AIService.instance
+  }
+
+  /**
+   * Fetch wrapper that routes CORS-restricted AI APIs through the Next.js proxy.
+   * For all other providers (Together AI, OpenAI, Google) it calls fetch directly.
+   */
+  private async safeFetch(url: string, init: RequestInit): Promise<Response> {
+    const needsProxy = PROXY_DOMAINS.some(domain => url.includes(domain))
+    if (!needsProxy) {
+      return fetch(url, init)
+    }
+    return fetch('/api/ai-proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url,
+        headers: init.headers,
+        body: init.body,
+      }),
+    })
   }
 
   async generateResponse(
@@ -37,7 +72,8 @@ export class AIService {
       maxTokens?: number
     }
   ): Promise<AIResponse> {
-    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, systemPrompt = '', maxTokens = 8192 } = options
+    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, systemPrompt = '' } = options
+    const maxTokens = options.maxTokens ?? getMaxTokensForProvider(provider)
 
     if (!apiKey || apiKey.trim() === '') {
       throw new Error(`API key required for ${provider}`)
@@ -52,6 +88,8 @@ export class AIService {
         return this.callAnthropic({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens })
       case 'google':
         return this.callGoogleAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens })
+      case 'xai':
+        return this.callOpenAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens, baseUrl: 'https://api.x.ai/v1' })
       default:
         throw new Error(`Unsupported AI provider: ${provider}`)
     }
@@ -70,7 +108,8 @@ export class AIService {
     },
     onChunk: (chunk: StreamingResponse) => void
   ): Promise<void> {
-    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, systemPrompt = '', maxTokens = 8192 } = options
+    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, systemPrompt = '' } = options
+    const maxTokens = options.maxTokens ?? getMaxTokensForProvider(provider)
 
     if (!apiKey || apiKey.trim() === '') {
       throw new Error(`API key required for ${provider}`)
@@ -85,6 +124,8 @@ export class AIService {
         return this.streamAnthropic({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens }, onChunk)
       case 'google':
         return this.streamGoogleAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens }, onChunk)
+      case 'xai':
+        return this.streamOpenAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens, baseUrl: 'https://api.x.ai/v1' }, onChunk)
       default:
         throw new Error(`Unsupported AI provider: ${provider}`)
     }
@@ -227,8 +268,9 @@ export class AIService {
     topP: number
     systemPrompt: string
     maxTokens: number
+    baseUrl?: string
   }): Promise<AIResponse> {
-    const { prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens } = options
+    const { prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens, baseUrl = 'https://api.openai.com/v1' } = options
 
     const messages = []
     if (systemPrompt) {
@@ -236,7 +278,7 @@ export class AIService {
     }
     messages.push({ role: 'user', content: prompt })
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await this.safeFetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -273,12 +315,74 @@ export class AIService {
       topP: number
       systemPrompt: string
       maxTokens: number
+      baseUrl?: string
     },
     onChunk: (chunk: StreamingResponse) => void
   ): Promise<void> {
-    // Similar to Together AI streaming but with OpenAI endpoint
-    // Implementation would be very similar to streamTogetherAI
-    throw new Error('OpenAI streaming not implemented yet')
+    const { prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens, baseUrl = 'https://api.openai.com/v1' } = options
+
+    const messages = []
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt })
+    }
+    messages.push({ role: 'user', content: prompt })
+
+    const response = await this.safeFetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        top_p: topP,
+        max_tokens: maxTokens,
+        stream: true
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`OpenAI API error: ${response.status} - ${error}`)
+    }
+
+    const reader = response.body?.getReader()
+    if (!reader) throw new Error('No response body reader available')
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim()
+            if (data === '[DONE]') {
+              onChunk({ content: '', done: true })
+              return
+            }
+            try {
+              const parsed = JSON.parse(data)
+              const content = parsed.choices[0]?.delta?.content || ''
+              if (content) onChunk({ content, done: false })
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
   }
 
   private async callAnthropic(options: {
@@ -292,11 +396,11 @@ export class AIService {
   }): Promise<AIResponse> {
     const { prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens } = options
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await this.safeFetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
@@ -334,8 +438,66 @@ export class AIService {
     },
     onChunk: (chunk: StreamingResponse) => void
   ): Promise<void> {
-    // Similar streaming implementation for Anthropic
-    throw new Error('Anthropic streaming not implemented yet')
+    const { prompt, model, apiKey, temperature, systemPrompt, maxTokens } = options
+
+    const response = await this.safeFetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        temperature,
+        stream: true,
+        system: systemPrompt || undefined,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Anthropic API error: ${response.status} - ${error}`)
+    }
+
+    const reader = response.body?.getReader()
+    if (!reader) throw new Error('No response body reader available')
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim()
+            try {
+              const parsed = JSON.parse(data)
+              if (parsed.type === 'content_block_delta') {
+                const text = parsed.delta?.text || ''
+                if (text) onChunk({ content: text, done: false })
+              } else if (parsed.type === 'message_stop') {
+                onChunk({ content: '', done: true })
+                return
+              }
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
   }
 
   private async callGoogleAI(options: {
@@ -359,7 +521,7 @@ export class AIService {
       generationConfig: {
         temperature,
         topP,
-        maxOutputTokens: maxTokens
+        maxOutputTokens: 65536
       }
     }
 
@@ -430,7 +592,7 @@ export class AIService {
       generationConfig: {
         temperature,
         topP,
-        maxOutputTokens: maxTokens
+        maxOutputTokens: 65536
       }
     }
 

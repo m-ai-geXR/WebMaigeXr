@@ -12,22 +12,22 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
-    "dev:electron": "concurrently -k \"cross-env NODE_ENV=development next dev\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .\"",
+    "dev:electron": "node scripts/dev-electron.js",
     "build": "next build",
-    "build:static": "cross-env ELECTRON_BUILD=true next build",
+    "build:static": "npx cross-env ELECTRON_BUILD=true next build",
     "build:electron": "pnpm run build:static && pnpm run electron:compile && electron-builder",
     "build:electron:win": "pnpm run build:static && pnpm run electron:compile && electron-builder --win",
     "build:electron:mac": "pnpm run build:static && pnpm run electron:compile && electron-builder --mac",
     "build:electron:linux": "pnpm run build:static && pnpm run electron:compile && electron-builder --linux",
     "build:electron:all": "pnpm run build:static && pnpm run electron:compile && electron-builder -mwl",
     "electron:compile": "tsc -p tsconfig.electron.json",
-    "electron:dev": "cross-env NODE_ENV=development electron .",
-    "electron:start": "cross-env NODE_ENV=production electron .",
+    "electron:dev": "npx cross-env NODE_ENV=development electron .",
+    "electron:start": "npx cross-env NODE_ENV=production electron .",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "type-check:electron": "tsc -p tsconfig.electron.json --noEmit",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps || true"
   },
   "dependencies": {
     "@codesandbox/sandpack-client": "^2.13.5",
