@@ -7,7 +7,7 @@
 
 import { create } from 'zustand'
 import { dbService, type Conversation, type Message as DBMessage, type AppSettings as DBSettings, type CodeSnippet } from '@/lib/db-service'
-import { defaultLibraries, defaultProviders, defaultSettings } from './store-defaults'
+import { defaultLibraries, defaultProviders, defaultSettings, modelMigrations } from './store-defaults'
 import { AppConfig } from '@/lib/app-config'
 
 export type ViewType = 'chat' | 'playground' | 'history' | 'snippets'
@@ -22,16 +22,40 @@ export interface Library3D {
   codeTemplate: string
 }
 
+/**
+ * Which generation controls a model accepts.
+ *
+ * Frontier models (Claude 5 series, GPT-5.6 / GPT-6) removed temperature and
+ * top_p and reject requests carrying custom values with a 400. They take a
+ * discrete reasoning-effort level instead.
+ */
+export type AIModelControl = 'sampling' | 'effort'
+
+/** Anthropic (output_config.effort) and OpenAI (reasoning_effort) share these levels. */
+export type AIEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+
+export const AI_EFFORT_LEVELS: Array<{ id: AIEffort; name: string; summary: string }> = [
+  { id: 'low', name: 'Low', summary: 'Fastest and cheapest — simple scenes' },
+  { id: 'medium', name: 'Medium', summary: 'Light reasoning for routine edits' },
+  { id: 'high', name: 'High', summary: 'Balanced depth and cost (recommended)' },
+  { id: 'xhigh', name: 'Extra High', summary: 'Deeper reasoning for complex scenes' },
+  { id: 'max', name: 'Maximum', summary: 'Maximum depth — highest cost and latency' }
+]
+
+export interface AIModelDefinition {
+  id: string
+  name: string
+  description: string
+  pricing: string
+  control?: AIModelControl
+  maxOutputTokens?: number
+}
+
 export interface AIProvider {
   id: string
   name: string
   baseUrl: string
-  models: Array<{
-    id: string
-    name: string
-    description: string
-    pricing: string
-  }>
+  models: AIModelDefinition[]
 }
 
 export interface ChatMessage {
@@ -50,6 +74,8 @@ export interface AppSettings {
   selectedLibrary: string
   temperature: number
   topP: number
+  /** Reasoning depth for models that take effort instead of temperature/top-p. */
+  effort: AIEffort
   systemPrompt: string
   theme: 'light' | 'dark' | 'system'
 }
@@ -130,6 +156,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (dbSettings) {
         // Merge database settings with defaults to ensure all fields are present
         let mergedSettings = { ...defaultSettings, ...dbSettings }
+
+        // Migrate retired model IDs before the existence check below, so a user on a
+        // withdrawn model lands on its successor instead of being reset to the default provider
+        const migrated = modelMigrations[mergedSettings.selectedModel]
+        if (migrated) {
+          console.log(`🔄 Migrated model ID: ${mergedSettings.selectedModel} → ${migrated}`)
+          mergedSettings.selectedModel = migrated
+        }
 
         // Reset provider/model selection if the saved model no longer exists in the current provider list
         const savedProvider = defaultProviders.find(p => p.id === mergedSettings.selectedProvider)

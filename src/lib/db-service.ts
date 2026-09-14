@@ -36,6 +36,8 @@ export interface AppSettings {
   selectedLibrary: string
   temperature: number
   topP: number
+  /** Reasoning depth for models that take effort instead of temperature/top-p. */
+  effort: 'low' | 'medium' | 'high' | 'xhigh' | 'max'
   systemPrompt: string
   theme: 'light' | 'dark' | 'system'
 }

@@ -1,4 +1,6 @@
 import { useAppStore } from '@/store/app-store'
+import type { AIModelControl, AIEffort } from '@/store/app-store'
+import { defaultProviders } from '@/store/store-defaults'
 
 export interface AIResponse {
   content: string
@@ -29,6 +31,26 @@ function getMaxTokensForProvider(provider: string): number {
 
 // Domains that block browser CORS — requests must go through the server-side proxy
 const PROXY_DOMAINS = ['api.anthropic.com', 'api.x.ai']
+
+/**
+ * Which generation controls a model accepts. Unknown ids fall back to sampling
+ * so custom or user-entered models keep working.
+ */
+function controlForModel(modelId: string): AIModelControl {
+  for (const provider of defaultProviders) {
+    const match = provider.models.find(m => m.id === modelId)
+    if (match) return match.control ?? 'sampling'
+  }
+  return 'sampling'
+}
+
+function maxOutputForModel(modelId: string, fallback: number): number {
+  for (const provider of defaultProviders) {
+    const match = provider.models.find(m => m.id === modelId)
+    if (match?.maxOutputTokens) return match.maxOutputTokens
+  }
+  return fallback
+}
 
 export class AIService {
   private static instance: AIService
@@ -68,11 +90,12 @@ export class AIService {
       apiKey: string
       temperature?: number
       topP?: number
+      effort?: AIEffort
       systemPrompt?: string
       maxTokens?: number
     }
   ): Promise<AIResponse> {
-    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, systemPrompt = '' } = options
+    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, effort = 'high', systemPrompt = '' } = options
     const maxTokens = options.maxTokens ?? getMaxTokensForProvider(provider)
 
     if (!apiKey || apiKey.trim() === '') {
@@ -83,13 +106,13 @@ export class AIService {
       case 'together':
         return this.callTogetherAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens })
       case 'openai':
-        return this.callOpenAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens })
+        return this.callOpenAI({ prompt, model, apiKey, temperature, topP, effort, systemPrompt, maxTokens })
       case 'anthropic':
-        return this.callAnthropic({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens })
+        return this.callAnthropic({ prompt, model, apiKey, temperature, topP, effort, systemPrompt, maxTokens })
       case 'google':
         return this.callGoogleAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens })
       case 'xai':
-        return this.callOpenAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens, baseUrl: 'https://api.x.ai/v1' })
+        return this.callOpenAI({ prompt, model, apiKey, temperature, topP, effort, systemPrompt, maxTokens, baseUrl: 'https://api.x.ai/v1' })
       default:
         throw new Error(`Unsupported AI provider: ${provider}`)
     }
@@ -103,12 +126,13 @@ export class AIService {
       apiKey: string
       temperature?: number
       topP?: number
+      effort?: AIEffort
       systemPrompt?: string
       maxTokens?: number
     },
     onChunk: (chunk: StreamingResponse) => void
   ): Promise<void> {
-    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, systemPrompt = '' } = options
+    const { provider, model, apiKey, temperature = 0.7, topP = 0.9, effort = 'high', systemPrompt = '' } = options
     const maxTokens = options.maxTokens ?? getMaxTokensForProvider(provider)
 
     if (!apiKey || apiKey.trim() === '') {
@@ -119,13 +143,13 @@ export class AIService {
       case 'together':
         return this.streamTogetherAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens }, onChunk)
       case 'openai':
-        return this.streamOpenAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens }, onChunk)
+        return this.streamOpenAI({ prompt, model, apiKey, temperature, topP, effort, systemPrompt, maxTokens }, onChunk)
       case 'anthropic':
-        return this.streamAnthropic({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens }, onChunk)
+        return this.streamAnthropic({ prompt, model, apiKey, temperature, topP, effort, systemPrompt, maxTokens }, onChunk)
       case 'google':
         return this.streamGoogleAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens }, onChunk)
       case 'xai':
-        return this.streamOpenAI({ prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens, baseUrl: 'https://api.x.ai/v1' }, onChunk)
+        return this.streamOpenAI({ prompt, model, apiKey, temperature, topP, effort, systemPrompt, maxTokens, baseUrl: 'https://api.x.ai/v1' }, onChunk)
       default:
         throw new Error(`Unsupported AI provider: ${provider}`)
     }
@@ -266,11 +290,12 @@ export class AIService {
     apiKey: string
     temperature: number
     topP: number
+    effort: AIEffort
     systemPrompt: string
     maxTokens: number
     baseUrl?: string
   }): Promise<AIResponse> {
-    const { prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens, baseUrl = 'https://api.openai.com/v1' } = options
+    const { prompt, model, apiKey, temperature, topP, effort, systemPrompt, maxTokens, baseUrl = 'https://api.openai.com/v1' } = options
 
     const messages = []
     if (systemPrompt) {
@@ -287,9 +312,18 @@ export class AIService {
       body: JSON.stringify({
         model,
         messages,
-        temperature,
-        top_p: topP,
-        max_tokens: maxTokens
+        // GPT-5.6 and GPT-6 400 on any custom temperature/top_p and renamed
+        // the output cap, so send reasoning effort instead.
+        ...(controlForModel(model) === 'effort'
+          ? {
+              reasoning_effort: effort,
+              max_completion_tokens: maxOutputForModel(model, maxTokens)
+            }
+          : {
+              temperature,
+              top_p: topP,
+              max_tokens: maxTokens
+            })
       })
     })
 
@@ -313,13 +347,14 @@ export class AIService {
       apiKey: string
       temperature: number
       topP: number
+      effort: AIEffort
       systemPrompt: string
       maxTokens: number
       baseUrl?: string
     },
     onChunk: (chunk: StreamingResponse) => void
   ): Promise<void> {
-    const { prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens, baseUrl = 'https://api.openai.com/v1' } = options
+    const { prompt, model, apiKey, temperature, topP, effort, systemPrompt, maxTokens, baseUrl = 'https://api.openai.com/v1' } = options
 
     const messages = []
     if (systemPrompt) {
@@ -336,10 +371,19 @@ export class AIService {
       body: JSON.stringify({
         model,
         messages,
-        temperature,
-        top_p: topP,
-        max_tokens: maxTokens,
-        stream: true
+        stream: true,
+        // GPT-5.6 and GPT-6 400 on any custom temperature/top_p and renamed
+        // the output cap, so send reasoning effort instead.
+        ...(controlForModel(model) === 'effort'
+          ? {
+              reasoning_effort: effort,
+              max_completion_tokens: maxOutputForModel(model, maxTokens)
+            }
+          : {
+              temperature,
+              top_p: topP,
+              max_tokens: maxTokens
+            })
       })
     })
 
@@ -391,10 +435,11 @@ export class AIService {
     apiKey: string
     temperature: number
     topP: number
+    effort: AIEffort
     systemPrompt: string
     maxTokens: number
   }): Promise<AIResponse> {
-    const { prompt, model, apiKey, temperature, topP, systemPrompt, maxTokens } = options
+    const { prompt, model, apiKey, temperature, topP, effort, systemPrompt, maxTokens } = options
 
     const response = await this.safeFetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -405,11 +450,13 @@ export class AIService {
       },
       body: JSON.stringify({
         model,
-        max_tokens: maxTokens,
-        temperature,
-        top_p: topP,
+        max_tokens: maxOutputForModel(model, maxTokens),
         system: systemPrompt,
-        messages: [{ role: 'user', content: prompt }]
+        messages: [{ role: 'user', content: prompt }],
+        // The Claude 5 series removed temperature/top_p; Claude 4.x rejects both together.
+        ...(controlForModel(model) === 'effort'
+          ? { thinking: { type: 'adaptive' }, output_config: { effort } }
+          : { temperature })
       })
     })
 
@@ -433,12 +480,13 @@ export class AIService {
       apiKey: string
       temperature: number
       topP: number
+      effort: AIEffort
       systemPrompt: string
       maxTokens: number
     },
     onChunk: (chunk: StreamingResponse) => void
   ): Promise<void> {
-    const { prompt, model, apiKey, temperature, systemPrompt, maxTokens } = options
+    const { prompt, model, apiKey, temperature, effort, systemPrompt, maxTokens } = options
 
     const response = await this.safeFetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -449,11 +497,14 @@ export class AIService {
       },
       body: JSON.stringify({
         model,
-        max_tokens: maxTokens,
-        temperature,
+        max_tokens: maxOutputForModel(model, maxTokens),
         stream: true,
         system: systemPrompt || undefined,
-        messages: [{ role: 'user', content: prompt }]
+        messages: [{ role: 'user', content: prompt }],
+        // The Claude 5 series removed temperature/top_p; Claude 4.x rejects both together.
+        ...(controlForModel(model) === 'effort'
+          ? { thinking: { type: 'adaptive' }, output_config: { effort } }
+          : { temperature })
       })
     })
 

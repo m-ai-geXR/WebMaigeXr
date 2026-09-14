@@ -138,6 +138,7 @@ export function ChatInterface() {
         apiKey,
         temperature: settings.temperature,
         topP: settings.topP,
+        effort: settings.effort,
         systemPrompt: settings.systemPrompt
       }, (chunk) => {
         if (!chunk.done) {

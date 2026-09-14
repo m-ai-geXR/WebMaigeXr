@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { X, Eye, EyeOff, Save, RotateCcw, Lock, Unlock, Shield } from 'lucide-react'
-import { useAppStore } from '@/store/app-store'
+import { useAppStore, AI_EFFORT_LEVELS } from '@/store/app-store'
 import { getParameterDescription, validateApiKey } from '@/lib/utils'
 import { cryptoService } from '@/lib/crypto-service'
 import { dbService } from '@/lib/db-service'
@@ -23,6 +23,10 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const currentProvider = providers.find(p => p.id === localSettings.selectedProvider)
   const currentModel = currentProvider?.models.find(m => m.id === localSettings.selectedModel)
   const currentLibrary = libraries.find(l => l.id === localSettings.selectedLibrary)
+
+  // Claude 5 series and GPT-5.6/GPT-6 reject temperature and top_p outright.
+  const usesEffortControl = (currentModel?.control ?? 'sampling') === 'effort'
+  const currentEffort = AI_EFFORT_LEVELS.find(l => l.id === localSettings.effort)
 
   const handleSettingChange = (key: keyof typeof settings, value: any) => {
     setLocalSettings(prev => ({ ...prev, [key]: value }))
@@ -288,10 +292,41 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   Current Configuration
                 </div>
                 <div className="text-sm text-blue-700 dark:text-blue-200">
-                  {parameterDescription}
+                  {usesEffortControl
+                    ? `${currentEffort?.name ?? 'High'} Reasoning \u2014 ${currentEffort?.summary ?? ''}`
+                    : parameterDescription}
                 </div>
               </div>
 
+              {usesEffortControl ? (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Reasoning Effort
+                  </label>
+                  <div className="grid grid-cols-5 gap-1">
+                    {AI_EFFORT_LEVELS.map((level) => (
+                      <button
+                        key={level.id}
+                        type="button"
+                        onClick={() => handleSettingChange('effort', level.id)}
+                        className={`px-2 py-2 text-xs rounded-md border transition-colors ${
+                          localSettings.effort === level.id
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {level.name}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {currentEffort?.summary}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    This model sets reasoning depth instead of temperature and top-p.
+                  </p>
+                </div>
+              ) : (
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -331,6 +366,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   </div>
                 </div>
               </div>
+              )}
             </section>
 
             {/* 3D Library Selection */}

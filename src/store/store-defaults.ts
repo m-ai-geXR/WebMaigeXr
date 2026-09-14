@@ -441,46 +441,44 @@ export const defaultProviders: AIProvider[] = [
     baseUrl: 'https://api.openai.com/v1',
     models: [
       {
+        id: 'gpt-6-astra',
+        name: 'GPT-6 Astra',
+        description: 'Most capable model for the hardest end-to-end work, 1.05M context',
+        pricing: '$10.00/1M in \u00b7 $50.00/1M out',
+        control: 'effort',
+        maxOutputTokens: 64000
+      },
+      {
+        id: 'gpt-5.6-sol',
+        name: 'GPT-5.6 Sol',
+        description: 'Flagship for complex professional work, 1.05M context',
+        pricing: '$4.00/1M in \u00b7 $20.00/1M out',
+        control: 'effort',
+        maxOutputTokens: 64000
+      },
+      {
+        id: 'gpt-5.6-terra',
+        name: 'GPT-5.6 Terra',
+        description: 'Balances intelligence and cost, 1.05M context',
+        pricing: '$2.00/1M in \u00b7 $12.00/1M out',
+        control: 'effort',
+        maxOutputTokens: 64000
+      },
+      {
+        id: 'gpt-5.6-luna',
+        name: 'GPT-5.6 Luna',
+        description: 'Optimized for cost-sensitive workloads, 1.05M context',
+        pricing: '$0.20/1M in \u00b7 $1.20/1M out',
+        control: 'effort',
+        maxOutputTokens: 64000
+      },
+      {
         id: 'gpt-5.2',
         name: 'GPT-5.2',
-        description: 'Best for coding and agentic tasks, 400K context',
-        pricing: '$1.75/1M in · $14.00/1M out'
-      },
-      {
-        id: 'gpt-5.2-pro',
-        name: 'GPT-5.2 Pro',
-        description: 'Smartest and most trustworthy, highest accuracy',
-        pricing: 'Premium tier'
-      },
-      {
-        id: 'gpt-5.2-chat-latest',
-        name: 'GPT-5.2 Chat (Latest)',
-        description: 'Latest ChatGPT model, auto-updates, 128K context',
-        pricing: '$1.75/1M in · $14.00/1M out'
-      },
-      {
-        id: 'o3-mini-2025-01-31',
-        name: 'o3 Mini',
-        description: 'Fast reasoning model, 200K context',
-        pricing: '$1.10/1M in · $4.40/1M out'
-      },
-      {
-        id: 'o1-2024-12-17',
-        name: 'o1',
-        description: 'Advanced reasoning for complex problems, 200K context',
-        pricing: '$15.00/1M in · $60.00/1M out'
-      },
-      {
-        id: 'gpt-4o',
-        name: 'GPT-4o',
-        description: 'Versatile multimodal model, 128K context',
-        pricing: '$2.50/1M in · $10.00/1M out'
-      },
-      {
-        id: 'gpt-4o-mini',
-        name: 'GPT-4o Mini',
-        description: 'Fast and affordable, 128K context',
-        pricing: '$0.15/1M in · $0.60/1M out'
+        description: 'Previous-generation coding and agentic model, 400K context',
+        pricing: '$1.75/1M in \u00b7 $14.00/1M out',
+        control: 'sampling',
+        maxOutputTokens: 64000
       }
     ]
   },
@@ -490,28 +488,52 @@ export const defaultProviders: AIProvider[] = [
     baseUrl: 'https://api.anthropic.com',
     models: [
       {
+        id: 'claude-fable-5-1',
+        name: 'Claude Fable 5.1',
+        description: 'Most capable for the hardest reasoning and agentic work, 1M context',
+        pricing: '$10.00/1M in \u00b7 $50.00/1M out',
+        control: 'effort',
+        maxOutputTokens: 64000
+      },
+      {
+        id: 'claude-opus-5',
+        name: 'Claude Opus 5',
+        description: 'Frontier intelligence for agents and coding, 1M context',
+        pricing: '$5.00/1M in \u00b7 $25.00/1M out',
+        control: 'effort',
+        maxOutputTokens: 64000
+      },
+      {
+        id: 'claude-sonnet-5',
+        name: 'Claude Sonnet 5',
+        description: 'Best combination of speed, cost and intelligence, 1M context',
+        pricing: '$2.00/1M in \u00b7 $10.00/1M out',
+        control: 'effort',
+        maxOutputTokens: 64000
+      },
+      {
+        id: 'claude-haiku-4-5',
+        name: 'Claude Haiku 4.5',
+        description: 'Fastest model with near-frontier intelligence, 200K context',
+        pricing: '$1.00/1M in \u00b7 $5.00/1M out',
+        control: 'sampling',
+        maxOutputTokens: 32000
+      },
+      {
         id: 'claude-opus-4-6',
         name: 'Claude Opus 4.6',
-        description: 'Most capable Claude model',
-        pricing: '$15.00/1M tokens'
+        description: 'Previous-generation flagship, 200K/1M context',
+        pricing: '$5.00/1M in \u00b7 $25.00/1M out',
+        control: 'sampling',
+        maxOutputTokens: 64000
       },
       {
         id: 'claude-sonnet-4-6',
         name: 'Claude Sonnet 4.6',
-        description: 'Best balance of speed and intelligence',
-        pricing: '$3.00/1M tokens'
-      },
-      {
-        id: 'claude-haiku-4-5-20251001',
-        name: 'Claude Haiku 4.5',
-        description: 'Fastest and most affordable Claude',
-        pricing: '$0.80/1M tokens'
-      },
-      {
-        id: 'claude-3-5-sonnet-20241022',
-        name: 'Claude 3.5 Sonnet',
-        description: 'Reliable workhorse for complex tasks',
-        pricing: '$3.00/1M tokens'
+        description: 'Previous-generation balanced model, 200K/1M context',
+        pricing: '$3.00/1M in \u00b7 $15.00/1M out',
+        control: 'sampling',
+        maxOutputTokens: 64000
       }
     ]
   },
@@ -613,6 +635,36 @@ export const defaultSettings: AppSettings = {
   selectedLibrary: 'react-three-fiber',
   temperature: 0.7,
   topP: 0.9,
+  effort: 'high',
   systemPrompt: '',
   theme: 'system'
+}
+
+/**
+ * Retired or invalid model IDs mapped onto their current equivalents, applied
+ * when settings are rehydrated from localStorage.
+ */
+export const modelMigrations: Record<string, string> = {
+  // Anthropic: retired 4.x snapshots -> Claude 5 series
+  'claude-sonnet-4-5-20250929': 'claude-sonnet-5',
+  'claude-sonnet-4-5': 'claude-sonnet-5',
+  'claude-sonnet-4-20250514': 'claude-sonnet-5',
+  'claude-opus-4-1-20250805': 'claude-opus-5',
+  'claude-opus-4-20250514': 'claude-opus-5',
+  'claude-3-5-sonnet-20241022': 'claude-sonnet-5',
+  'claude-3-5-sonnet-20240620': 'claude-sonnet-5',
+  'claude-3-5-haiku-20241022': 'claude-haiku-4-5',
+  'claude-haiku-4-5-20251001': 'claude-haiku-4-5',
+  'claude-3-opus-20240229': 'claude-opus-5',
+  'claude-3-haiku-20240307': 'claude-haiku-4-5',
+
+  // OpenAI: o-series shuts down 2026-10-23, GPT-4o superseded
+  'o1-2024-12-17': 'gpt-5.6-sol',
+  'o1': 'gpt-5.6-sol',
+  'o3-mini-2025-01-31': 'gpt-5.6-terra',
+  'o3-mini': 'gpt-5.6-terra',
+  'gpt-4o': 'gpt-5.6-terra',
+  'gpt-4o-mini': 'gpt-5.6-luna',
+  'gpt-5.2-pro': 'gpt-6-astra',
+  'gpt-5.2-chat-latest': 'gpt-5.6-sol'
 }
