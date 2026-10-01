@@ -225,6 +225,16 @@ From [src/store/app-store.ts](src/store/app-store.ts):
      the studio protocol, why carts must not use `export`, and why the mobile
      playgrounds need an https base URL
 
+### **Electron desktop shell**
+
+The desktop app opens with the same vaporwave splash as the iOS and Android
+clients ([electron/splash.html](electron/splash.html)), then hands off to the app
+window once it is ready to show. The main process owns that handoff, including a
+minimum display time and a safety timeout, so nothing in the splash page is
+load-bearing. See [docs/ELECTRON_SPLASH.md](docs/ELECTRON_SPLASH.md) — it also
+covers two startup traps: `ELECTRON_RUN_AS_NODE` in VS Code terminals, and the
+hardcoded dev port 3000.
+
 ### **Library3D Interface**
 
 ```typescript

@@ -1,148 +1,431 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>maigeXR</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <title>m{ai}geXR</title>
 
-    body {
-      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      color: #ffffff;
-      overflow: hidden;
-      -webkit-app-region: drag;
-    }
+    <!--
+      Electron splash screen.
 
-    .logo-container {
-      position: relative;
-      margin-bottom: 30px;
-    }
+      Deliberately the same vaporwave scene as the iOS and Android splashes
+      (Resources/splash.html and assets/splash.html): sunset gradient sky,
+      pulsing sun disc, scrolling neon grid, drifting particles, bloom and a
+      touch of RGB shift, under the neon m{ai}geXR wordmark.
 
-    .logo {
-      width: 120px;
-      height: 120px;
-      border-radius: 24px;
-      box-shadow: 0 0 60px rgba(99, 102, 241, 0.4);
-      animation: pulse 2s ease-in-out infinite;
-    }
+      Two differences from mobile, both because Electron waits on a real app
+      load rather than a fixed timer:
 
-    .glow-ring {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 160px;
-      height: 160px;
-      border: 2px solid rgba(99, 102, 241, 0.3);
-      border-radius: 50%;
-      animation: ring-pulse 2s ease-in-out infinite;
-    }
+        * Dismissal is owned by the main process, not this page. main.ts closes
+          the splash once the app window is ready to show (with a minimum
+          display time so it does not flash, and a safety timeout so a slow or
+          dead dev server cannot strand it). Clicking anywhere still skips
+          ahead, which just asks the main process to finish early.
 
-    .glow-ring:nth-child(2) {
-      width: 200px;
-      height: 200px;
-      animation-delay: 0.5s;
-    }
+        * Nothing here is load-bearing. Three.js comes from a CDN, exactly as
+          on mobile, so if that fetch fails the scene is simply absent - the
+          wordmark, status line and version are plain CSS/HTML and the main
+          process still dismisses on schedule.
+    -->
 
-    .title {
-      font-size: 32px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      margin-bottom: 8px;
-      background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/super-three@0.173.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/super-three@0.173.0/examples/jsm/"
+        }
     }
+    </script>
 
-    .subtitle {
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.6);
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      margin-bottom: 40px;
-    }
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .loader {
-      display: flex;
-      gap: 8px;
-    }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0A0A0A;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+        }
 
-    .loader-dot {
-      width: 10px;
-      height: 10px;
-      background: #6366f1;
-      border-radius: 50%;
-      animation: bounce 1.4s ease-in-out infinite;
-    }
+        #canvas-container {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
 
-    .loader-dot:nth-child(1) { animation-delay: 0s; }
-    .loader-dot:nth-child(2) { animation-delay: 0.2s; }
-    .loader-dot:nth-child(3) { animation-delay: 0.4s; }
+        /* Keeps the wordmark legible over the brightest part of the scene */
+        #scrim {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 45%, rgba(10, 10, 10, 0.55) 0%, rgba(10, 10, 10, 0) 60%);
+            pointer-events: none;
+            z-index: 5;
+        }
 
-    .status {
-      position: absolute;
-      bottom: 30px;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.4);
-    }
+        #logo-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            pointer-events: none;
+            text-align: center;
+        }
 
-    .version {
-      position: absolute;
-      bottom: 10px;
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.2);
-    }
+        .brand-text {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            font-size: 64px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            animation: neonPulse 2s ease-in-out infinite;
+        }
 
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-    }
+        .m-text, .ge-text {
+            color: #00FFF9;
+            text-shadow: 0 0 20px #00FFF9, 0 0 40px #00FFF9;
+        }
 
-    @keyframes ring-pulse {
-      0%, 100% {
-        opacity: 0.3;
-        transform: translate(-50%, -50%) scale(1);
-      }
-      50% {
-        opacity: 0.6;
-        transform: translate(-50%, -50%) scale(1.1);
-      }
-    }
+        .ai-text {
+            color: #FF00C1;
+            text-shadow: 0 0 20px #FF00C1, 0 0 40px #FF00C1;
+        }
 
-    @keyframes bounce {
-      0%, 80%, 100% { transform: translateY(0); }
-      40% { transform: translateY(-12px); }
-    }
-  </style>
+        .tagline {
+            margin-top: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.55);
+        }
+
+        @keyframes neonPulse {
+            0%, 100% { opacity: 1; filter: brightness(1); }
+            50%      { opacity: 0.85; filter: brightness(1.2); }
+        }
+
+        /* Loading affordances - mobile does not need these, Electron waits on a
+           real page load which can take a few seconds in development. */
+        #footer {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 20px;
+            z-index: 10;
+            text-align: center;
+            pointer-events: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        .loader {
+            display: flex;
+            gap: 7px;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .loader-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #00FFF9;
+            box-shadow: 0 0 10px #00FFF9;
+            animation: bounce 1.4s ease-in-out infinite;
+        }
+
+        .loader-dot:nth-child(2) {
+            background: #FF00C1;
+            box-shadow: 0 0 10px #FF00C1;
+            animation-delay: 0.2s;
+        }
+
+        .loader-dot:nth-child(3) {
+            background: #9600FF;
+            box-shadow: 0 0 10px #9600FF;
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }
+            40%           { transform: translateY(-9px); opacity: 1; }
+        }
+
+        #status {
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        #version {
+            margin-top: 5px;
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.22);
+        }
+
+        /* Click feedback, mirroring the mobile tap state */
+        body.tapped #logo-overlay {
+            transform: translate(-50%, -50%) scale(0.98);
+        }
+
+        #logo-overlay {
+            transition: transform 120ms ease-out;
+        }
+
+        @media (max-width: 430px) {
+            .brand-text { font-size: 48px; }
+        }
+
+        @media (min-width: 768px) {
+            .brand-text { font-size: 80px; }
+        }
+    </style>
 </head>
 <body>
-  <div class="logo-container">
-    <div class="glow-ring"></div>
-    <div class="glow-ring"></div>
-    <img class="logo" src="icon.png" alt="maigeXR" onerror="this.style.display='none'">
-  </div>
+    <div id="canvas-container"></div>
+    <div id="scrim"></div>
 
-  <div class="title">m{ai}geXR</div>
-  <div class="subtitle">Extended Reality Platform</div>
+    <div id="logo-overlay">
+        <div class="brand-text">
+            <span class="m-text">m</span><span class="ai-text">{ai}</span><span class="ge-text">geXR</span>
+        </div>
+        <div class="tagline">Extended Reality Platform</div>
+    </div>
 
-  <div class="loader">
-    <div class="loader-dot"></div>
-    <div class="loader-dot"></div>
-    <div class="loader-dot"></div>
-  </div>
+    <div id="footer">
+        <div class="loader">
+            <div class="loader-dot"></div>
+            <div class="loader-dot"></div>
+            <div class="loader-dot"></div>
+        </div>
+        <div id="status">Starting&hellip;</div>
+        <div id="version"></div>
+    </div>
 
-  <div class="status">Loading...</div>
-  <div class="version">v1.0.0</div>
+    <!--
+      Classic script, intentionally separate from the module below: status,
+      version and click-to-skip must keep working even if the Three.js import
+      fails.
+    -->
+    <script>
+        (function () {
+            var splash = window.maigexrSplash;
+
+            if (splash && typeof splash.onStatus === 'function') {
+                splash.onStatus(function (message) {
+                    var el = document.getElementById('status');
+                    if (el) el.textContent = message;
+                });
+            }
+
+            if (splash && typeof splash.getAppVersion === 'function') {
+                splash.getAppVersion().then(function (v) {
+                    var el = document.getElementById('version');
+                    if (el && v) el.textContent = 'v' + v;
+                }).catch(function () { /* version is cosmetic */ });
+            }
+
+            // Click anywhere to skip ahead, like tapping the mobile splash.
+            document.addEventListener('mousedown', function () {
+                document.body.classList.add('tapped');
+            });
+            document.addEventListener('mouseup', function () {
+                document.body.classList.remove('tapped');
+            });
+            document.addEventListener('click', function () {
+                if (splash && typeof splash.dismiss === 'function') splash.dismiss();
+            });
+        })();
+    </script>
+
+    <script type="module">
+        // Ported from the iOS/Android splash so all three platforms open the
+        // same way. Kept visually identical; only the particle count and the
+        // canvas size differ, since this runs in a small desktop window.
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { RGBShiftShader } from 'three/addons/shaders/RGBShiftShader.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+        console.log('m{ai}geXR splash - Three.js r' + THREE.REVISION);
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x0A0A0A, 10, 100);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2, 5);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: false,
+            powerPreference: 'high-performance'
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1.5;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // 1. Sunset sky gradient
+        const skyGeometry = new THREE.PlaneGeometry(200, 100);
+        const skyMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                topColor: { value: new THREE.Color(0x9600FF) },
+                middleColor: { value: new THREE.Color(0xFF00C1) },
+                bottomColor: { value: new THREE.Color(0x00FFF9) }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 topColor;
+                uniform vec3 middleColor;
+                uniform vec3 bottomColor;
+                varying vec2 vUv;
+                void main() {
+                    vec3 color;
+                    if (vUv.y > 0.5) {
+                        color = mix(middleColor, topColor, (vUv.y - 0.5) * 2.0);
+                    } else {
+                        color = mix(bottomColor, middleColor, vUv.y * 2.0);
+                    }
+                    gl_FragColor = vec4(color, 1.0);
+                }
+            `,
+            side: THREE.DoubleSide
+        });
+        const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+        sky.position.set(0, 0, -50);
+        scene.add(sky);
+
+        // 2. Sun disc
+        const sun = new THREE.Mesh(
+            new THREE.SphereGeometry(8, 32, 32),
+            new THREE.MeshBasicMaterial({ color: 0xFF00C1 })
+        );
+        sun.position.set(0, 0, -45);
+        scene.add(sun);
+
+        // 3. Scrolling grid landscape
+        const gridHelper = new THREE.GridHelper(100, 50, 0x00FFF9, 0x00FFF9);
+        gridHelper.material.opacity = 0.5;
+        gridHelper.material.transparent = true;
+        gridHelper.position.y = -2;
+        scene.add(gridHelper);
+
+        const gridHelper2 = new THREE.GridHelper(100, 50, 0x9600FF, 0x9600FF);
+        gridHelper2.material.opacity = 0.3;
+        gridHelper2.material.transparent = true;
+        gridHelper2.position.y = -2.1;
+        gridHelper2.position.z = -10;
+        scene.add(gridHelper2);
+
+        // 4. Drifting neon particles
+        const particleCount = 1200;
+        const particlesGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+
+        const neonColors = [
+            new THREE.Color(0x00FFF9),
+            new THREE.Color(0xFF00C1),
+            new THREE.Color(0x9600FF)
+        ];
+
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 100;
+            positions[i * 3 + 1] = Math.random() * 50 - 10;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+
+            const color = neonColors[Math.floor(Math.random() * neonColors.length)];
+            colors[i * 3] = color.r;
+            colors[i * 3 + 1] = color.g;
+            colors[i * 3 + 2] = color.b;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const particles = new THREE.Points(particlesGeometry, new THREE.PointsMaterial({
+            size: 0.3,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        }));
+        scene.add(particles);
+
+        // Post-processing: neon glow plus a hint of chromatic aberration
+        const composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+
+        composer.addPass(new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            1.2,
+            0.4,
+            0.85
+        ));
+
+        const rgbShiftPass = new ShaderPass(RGBShiftShader);
+        rgbShiftPass.uniforms['amount'].value = 0.0015;
+        composer.addPass(rgbShiftPass);
+
+        composer.addPass(new OutputPass());
+
+        const gridSpeed = 0.05;
+        let time = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Infinite scroll
+            gridHelper.position.z += gridSpeed;
+            gridHelper2.position.z += gridSpeed * 0.8;
+            if (gridHelper.position.z > 10) gridHelper.position.z = -10;
+            if (gridHelper2.position.z > 5) gridHelper2.position.z = -15;
+
+            const pos = particles.geometry.attributes.position.array;
+            for (let i = 0; i < particleCount; i++) {
+                pos[i * 3 + 1] += Math.sin(time + i * 0.1) * 0.002;
+                pos[i * 3 + 2] += 0.01;
+                if (pos[i * 3 + 2] > 50) pos[i * 3 + 2] = -50;
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+            particles.rotation.y += 0.0005;
+
+            sun.scale.setScalar(1 + Math.sin(time * 2) * 0.05);
+
+            composer.render();
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        console.log('Vaporwave splash scene initialized');
+    </script>
 </body>
 </html>
