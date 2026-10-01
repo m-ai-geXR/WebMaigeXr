@@ -221,6 +221,13 @@ export function createApplicationMenu(mainWindow: BrowserWindow): void {
             mainWindow.webContents.send('menu:action', 'selectLibrary:aframe')
           },
         },
+        {
+          label: 'Nova64',
+          type: 'radio',
+          click: () => {
+            mainWindow.webContents.send('menu:action', 'selectLibrary:nova64')
+          },
+        },
         { type: 'separator' },
         {
           label: 'Run Scene',
