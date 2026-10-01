@@ -381,6 +381,113 @@ function App() {
 }
 
 export default App`
+  },
+  {
+    id: 'nova64',
+    name: 'Nova64',
+    version: '0.5.2',
+    description: 'Retro 3D fantasy console - N64/PS1-era games in JavaScript',
+    cdnUrls: [], // Rendered by the hosted Nova64 studio runner, not a script tag
+    systemPrompt: `You are an expert Nova64 developer. Nova64 is a retro 3D fantasy console (https://nova64.io) that renders N64/PlayStation-era low-poly scenes on top of Three.js. Generate complete, working Nova64 carts.
+
+CRITICAL - cart shape:
+- Declare lifecycle functions as PLAIN declarations: function init() {}, function update(dt) {}, function draw() {}
+- NEVER use the export keyword. The studio runner evaluates your code with new Function(), so export is a syntax error. (The Nova64 README shows "export function init()" for file-based carts - that form does NOT work here.)
+- init() runs once for setup and may be async. update(dt) runs every frame, dt in seconds. draw() is for the 2D HUD overlay and is optional.
+- Declare mutable state with let/var at the top level of the cart, assign it inside init().
+
+CRITICAL - the API is namespaced:
+- Everything lives under the nova64.* namespace. Bare globals have been retired - createCube(...) alone will throw.
+- nova64.scene.*  createCube, createSphere, createPlane, createCylinder, createCone, createCapsule, createTorus, loadModel, loadTexture, destroyMesh, setPosition, setRotation, setScale, getPosition, rotateMesh, moveMesh, setMeshVisible, setMeshOpacity, setFlatShading, setPBRProperties, createInstancedMesh, clearScene, setClearColor, raycastFromCamera
+- nova64.camera.*  setCameraPosition, setCameraTarget, setCameraLookAt, setCameraFOV
+- nova64.light.*   setAmbientLight, setLightDirection, setLightColor, setDirectionalLight, createPointLight, setPointLightPosition, removeLight, setFog, clearFog, createSpaceSkybox, createGradientSkybox, createSolidSkybox, animateSkybox, clearSkybox
+- nova64.fx.*      enableBloom, setBloomStrength, enableVignette, enableChromaticAberration, enableFXAA, disableBloom
+- nova64.draw.*    cls, print, printCentered, line, circle, rectfill, drawRect, rgba8, hexColor, drawGlowText, drawProgressBar, drawHealthBar, drawScanlines, screenWidth, screenHeight
+- nova64.input.*   key, keyp, btn, btnp
+- nova64.util.*    lerp, clamp, randRange, randInt, dist, dist3d, remap, pulse, noise, ease, deg2rad
+- nova64.audio.*   sfx, setVolume
+- nova64.tween.*, nova64.physics.*, nova64.voxel.*, nova64.ui.*, nova64.xr.* (enableVR, enableAR, disableXR)
+
+Signatures (exact):
+- createCube(size, color, position, options) or createCube(w, h, d, color, position, options) -> meshId
+- createSphere(radius, color, position, segments, options) -> meshId
+- createPlane(width, height, color, position) -> meshId
+- createCylinder(radiusTop, radiusBottom, height, color, position, options) -> meshId
+- createTorus(radius, tube, color, position, options) -> meshId
+- setPosition(meshId, x, y, z), setRotation(meshId, rx, ry, rz) in radians, rotateMesh(meshId, dx, dy, dz), setScale(meshId, sx, sy, sz)
+- setPBRProperties(meshId, { metalness, roughness, envMapIntensity, color })
+- setAmbientLight(color, intensity), setLightDirection(x, y, z), createPointLight(color, intensity, distance, x, y, z) -> lightId
+- loadModel(url, position, scale) -> Promise<meshId>
+- print(text, x, y, color, scale) - color is a packed value from nova64.draw.rgba8(r, g, b, a), NOT a palette index
+- 3D colors are hex numbers like 0xff3366
+
+Style guidelines:
+- Lean into the retro look: low segment counts, flat shading, punchy saturated colors, fog for depth, a bloom or vignette pass.
+- Keep per-frame work cheap - create meshes in init(), only transform them in update().
+- Scale motion by dt so it is framerate independent.
+- Add brief comments explaining the console concepts you use.`,
+    codeTemplate: `// Nova64 cart - retro 3D fantasy console
+// Lifecycle: init() once, update(dt) every frame, draw() for the 2D HUD.
+// No export keyword - the studio runner evaluates this with new Function().
+
+let cubeId;
+let groundId;
+let orbId;
+let elapsed = 0;
+
+function init() {
+  // Backdrop and camera
+  nova64.scene.setClearColor(0x090a0f);
+  nova64.camera.setCameraPosition(0, 5, 11);
+  nova64.camera.setCameraTarget(0, 1, 0);
+  nova64.camera.setCameraFOV(60);
+
+  // Lighting - warm key light, cool fill, for that N64 cartridge look
+  nova64.light.setAmbientLight(0x404060, 0.8);
+  nova64.light.setLightDirection(-0.5, -1, -0.3);
+  nova64.light.setLightColor(0xffeedd);
+
+  // Fog gives cheap depth and hides the draw distance
+  nova64.light.setFog(0x090a0f, 18, 48);
+
+  // Hero cube
+  cubeId = nova64.scene.createCube(2, 0xff3366, [0, 1.5, 0]);
+  nova64.scene.setPBRProperties(cubeId, { metalness: 0.4, roughness: 0.35 });
+
+  // A low-poly orb - few segments on purpose
+  orbId = nova64.scene.createSphere(0.9, 0x33e1ff, [4, 1.2, -1], 10);
+
+  // Checkerboard-ish ground plane
+  groundId = nova64.scene.createPlane(60, 60, 0x1b2735, [0, -0.01, 0]);
+  nova64.scene.setFlatShading(groundId, true);
+
+  // Post-processing
+  nova64.fx.enableBloom();
+  nova64.fx.setBloomStrength(0.6);
+  nova64.fx.enableVignette();
+}
+
+function update(dt) {
+  elapsed += dt;
+
+  // Scale by dt so motion is framerate independent
+  nova64.scene.rotateMesh(cubeId, 0, dt * 1.2, 0);
+  nova64.scene.setPosition(cubeId, 0, 1.5 + Math.sin(elapsed * 2) * 0.4, 0);
+
+  // Orbit the orb around the cube
+  nova64.scene.setPosition(
+    orbId,
+    Math.cos(elapsed) * 4,
+    1.2,
+    Math.sin(elapsed) * 4
+  );
+}
+
+function draw() {
+  // 2D HUD drawn on top of the 3D scene
+  const white = nova64.draw.rgba8(255, 255, 255, 255);
+  nova64.draw.print('NOVA64 x m{ai}geXR', 8, 8, white, 1);
+}`
   }
 ]
 
