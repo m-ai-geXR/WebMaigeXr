@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAppStore } from '@/store/app-store'
 import { APIKeyUnlock, PasswordSetup } from '@/components/settings/api-key-unlock'
 import { cryptoService, type EncryptedData, type DecryptedApiKeys } from '@/lib/crypto-service'
@@ -14,14 +14,16 @@ interface AppInitializerProps {
 export function AppInitializer({ children }: AppInitializerProps) {
   const { initialize, updateSettings, settings } = useAppStore()
   const [isInitializing, setIsInitializing] = useState(true)
+  const [initError, setInitError] = useState<string | null>(null)
   const [encryptionEnabled, setEncryptionEnabled] = useState(false)
   const [isUnlocked, setIsUnlocked] = useState(false)
   const [showPasswordSetup, setShowPasswordSetup] = useState(false)
   const [encryptedData, setEncryptedData] = useState<EncryptedData | null>(null)
 
   // Initialize app and check for encryption
-  useEffect(() => {
-    const initializeApp = async () => {
+  const initializeApp = useCallback(async () => {
+      setIsInitializing(true)
+      setInitError(null)
       try {
         // Initialize database and store
         await initialize()
@@ -46,15 +48,29 @@ export function AppInitializer({ children }: AppInitializerProps) {
           setIsUnlocked(true)
         }
       } catch (error) {
+        // Do NOT fall through to rendering the app here.
+        //
+        // This used to log, toast, and then clear isInitializing in a `finally`,
+        // which rendered the full UI on top of an uninitialised database. Since
+        // the store calls dbService directly in about twenty places, every
+        // subsequent action — switching 3D library, changing a model, saving a
+        // snippet — threw "Database not initialized" straight out of a Zustand
+        // set() updater, surfacing as a wall of uncaught React errors far from
+        // the real cause. Showing the actual failure once is far more useful.
         console.error('Failed to initialize app:', error)
+        const message = error instanceof Error ? error.message : String(error)
+        setInitError(message)
         toast.error('Failed to initialize application')
-      } finally {
         setIsInitializing(false)
+        return
       }
-    }
 
-    initializeApp()
+      setIsInitializing(false)
   }, [initialize])
+
+  useEffect(() => {
+    initializeApp()
+  }, [initializeApp])
 
   // Handle successful unlock
   const handleUnlock = (apiKeys: DecryptedApiKeys) => {
@@ -118,6 +134,40 @@ export function AppInitializer({ children }: AppInitializerProps) {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             Loading database and checking encryption
           </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Initialization failed — surface it instead of rendering a broken app
+  if (initError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+        <div className="max-w-xl w-full bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            Could not start maigeXR
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+            The local database failed to initialize, so settings and conversations
+            cannot be saved. The app is not usable in this state.
+          </p>
+
+          <pre className="text-xs bg-gray-100 dark:bg-gray-900 text-red-600 dark:text-red-400 rounded p-3 mb-4 overflow-x-auto whitespace-pre-wrap">
+            {initError}
+          </pre>
+
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+            The usual cause is a missing sql.js WebAssembly file. From the project
+            directory run <code className="font-mono text-xs bg-gray-100 dark:bg-gray-900 px-1 py-0.5 rounded">pnpm run sql-wasm</code>,
+            then reload.
+          </p>
+
+          <button
+            onClick={() => initializeApp()}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     )
