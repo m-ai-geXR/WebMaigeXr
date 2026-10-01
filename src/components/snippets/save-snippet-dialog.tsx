@@ -37,7 +37,7 @@ export function SaveSnippetDialog({ code, currentLibrary, onClose, onSave }: Sav
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
 
-  const libraries = ['babylonjs', 'threejs', 'react-three-fiber', 'aframe', 'reactylon']
+  const libraries = ['babylonjs', 'threejs', 'react-three-fiber', 'aframe', 'reactylon', 'nova64']
 
   const handleSave = async () => {
     const newErrors: string[] = []

@@ -7,7 +7,7 @@
 
 export interface BuildOptions {
   code: string
-  framework: 'babylonjs' | 'threejs' | 'react-three-fiber' | 'aframe' | 'reactylon'
+  framework: 'babylonjs' | 'threejs' | 'react-three-fiber' | 'aframe' | 'reactylon' | 'nova64'
   packages?: string[]  // Additional npm packages to install
   useNpmPackages?: boolean  // If true, use npm packages instead of CDN
 }
@@ -58,6 +58,9 @@ export class BuildService {
 
       // Reactylon
       'reactylon': '^3.2.1',
+
+      // Nova64 retro 3D fantasy console
+      'nova64': '^0.5.2',
 
       // React
       'react': '^18.2.0',

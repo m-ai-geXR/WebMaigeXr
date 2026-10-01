@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { Library3D } from '@/store/app-store'
+import { Nova64Renderer } from './nova64-renderer'
 
 interface SceneRendererProps {
   code: string
@@ -11,6 +12,18 @@ interface SceneRendererProps {
 }
 
 export function SceneRenderer({ code, library, isRunning }: SceneRendererProps) {
+  // Nova64 is a console, not a drop-in script: it boots its own runtime and
+  // accepts carts over postMessage, so it gets a dedicated renderer rather than
+  // a generated document. Delegating before any hooks run keeps hook order
+  // stable, since this branch never changes for a given mounted renderer.
+  if (library.id === 'nova64') {
+    return <Nova64Renderer code={code} isRunning={isRunning} />
+  }
+
+  return <StandardSceneRenderer code={code} library={library} isRunning={isRunning} />
+}
+
+function StandardSceneRenderer({ code, library, isRunning }: SceneRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

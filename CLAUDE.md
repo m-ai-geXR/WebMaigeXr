@@ -205,11 +205,31 @@ From [src/store/app-store.ts](src/store/app-store.ts):
    - Component-based 3D development
    - System prompt optimized for R3F hooks and patterns
 
+4. **A-Frame v1.7.0**
+   - Declarative HTML entity-component framework
+   - WebXR VR/AR support
+
+5. **Reactylon 3.2.1**
+   - Declarative React renderer for Babylon.js
+   - Sandpack preview
+
+6. **Nova64 v0.5.2** - retro 3D fantasy console
+   - N64/PS1-era low-poly rendering on top of Three.js
+   - Grouped `nova64.*` API (scene, camera, light, fx, draw, input, util, xr, ...)
+   - Carts are `init()` / `update(dt)` / `draw()` — **no `export` keyword**
+   - Rendered by embedding Nova64's hosted studio runner rather than by
+     generating a document; see [src/lib/nova64-runner.ts](src/lib/nova64-runner.ts)
+     and [src/components/playground/nova64-renderer.tsx](src/components/playground/nova64-renderer.tsx)
+   - Docs: https://nova64.io/docs/api-3d
+   - **Design notes**: [docs/NOVA64_INTEGRATION.md](docs/NOVA64_INTEGRATION.md) —
+     the studio protocol, why carts must not use `export`, and why the mobile
+     playgrounds need an https base URL
+
 ### **Library3D Interface**
 
 ```typescript
 export interface Library3D {
-  id: string                // 'babylonjs' | 'threejs' | 'react-three-fiber'
+  id: string                // 'babylonjs' | 'threejs' | 'react-three-fiber' | 'aframe' | 'reactylon' | 'nova64'
   name: string              // Display name
   version: string           // Library version
   description: string       // Feature description
@@ -283,6 +303,10 @@ persist(
   }
 )
 ```
+
+> **Database startup**: sql.js needs its WebAssembly binary in `public/sql-wasm/`,
+> which is generated (`pnpm run sql-wasm`) because `public/` is gitignored. If the
+> app reports a database failure, see [docs/DATABASE_INIT_FIX.md](docs/DATABASE_INIT_FIX.md).
 
 **⚠️ Security Note**: API keys are stored in browser localStorage. This is acceptable for local development but **NOT for production deployment**.
 

@@ -70,7 +70,7 @@ export function SnippetLibrary({ onClose, onLoadSnippet }: SnippetLibraryProps) 
   }, [snippets])
 
   // Get available libraries
-  const libraries = ['all', 'babylonjs', 'threejs', 'react-three-fiber', 'aframe', 'reactylon']
+  const libraries = ['all', 'babylonjs', 'threejs', 'react-three-fiber', 'aframe', 'reactylon', 'nova64']
 
   const handleLoadSnippet = (snippet: CodeSnippet) => {
     if (onLoadSnippet) {

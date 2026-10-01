@@ -11,9 +11,15 @@
   },
   "license": "MIT",
   "scripts": {
+    "sql-wasm": "node scripts/sql-wasm-assets.js",
+    "sql-wasm:check": "node scripts/sql-wasm-assets.js --check",
+    "predev": "pnpm run sql-wasm",
     "dev": "next dev",
+    "predev:electron": "pnpm run sql-wasm",
     "dev:electron": "node scripts/dev-electron.js",
+    "prebuild": "pnpm run sql-wasm",
     "build": "next build",
+    "prebuild:static": "pnpm run sql-wasm",
     "build:static": "npx cross-env ELECTRON_BUILD=true next build",
     "build:electron": "pnpm run build:static && pnpm run electron:compile && electron-builder",
     "build:electron:win": "pnpm run build:static && pnpm run electron:compile && electron-builder --win",
@@ -23,11 +29,14 @@
     "electron:compile": "tsc -p tsconfig.electron.json",
     "electron:dev": "npx cross-env NODE_ENV=development electron .",
     "electron:start": "npx cross-env NODE_ENV=production electron .",
+    "prestart": "pnpm run sql-wasm",
     "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "type-check:electron": "tsc -p tsconfig.electron.json --noEmit",
-    "postinstall": "electron-builder install-app-deps || true"
+    "postinstall": "node scripts/sql-wasm-assets.js && (electron-builder install-app-deps || true)"
   },
   "dependencies": {
     "@codesandbox/sandpack-client": "^2.13.5",
@@ -70,6 +79,7 @@
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.3.0",
+    "vitest": "^1.6.0",
     "wait-on": "^7.2.0"
   },
   "optionalDependencies": {

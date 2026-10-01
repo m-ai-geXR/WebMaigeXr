@@ -51,6 +51,9 @@ export async function exportScene(
       case 'react-three-fiber':
         exportData = generateR3FExport(code, includeReadme)
         break
+      case 'nova64':
+        exportData = generateNova64Export(code, includeReadme)
+        break
       default:
         return { success: false, error: `Unsupported library: ${libraryId}` }
     }
@@ -274,6 +277,128 @@ NOTES:
 REQUIREMENTS:
 - Modern web browser with WebGL
 - VR headset optional (Oculus, Vive, etc.)
+
+Generated: ${new Date().toISOString()}
+`
+  }
+
+  return { files, mainFile: 'index.html' }
+}
+
+/**
+ * Generate Nova64 export files
+ *
+ * Nova64 carts are driven by the console rather than being standalone pages, so
+ * the export ships two ways to run the same cart: the real CLI workflow
+ * (`npx nova64 dev`) and a zero-install index.html that drives the hosted studio
+ * runner over postMessage.
+ */
+function generateNova64Export(code: string, includeReadme: boolean): { files: Record<string, string>; mainFile: string } {
+  const packageJson = JSON.stringify({
+    name: 'maigexr-nova64-cart',
+    version: '1.0.0',
+    private: true,
+    type: 'module',
+    dependencies: {
+      nova64: '^0.5.2'
+    },
+    scripts: {
+      dev: 'nova64 dev',
+      start: 'nova64 dev'
+    }
+  }, null, 2)
+
+  // Standalone preview: embed the hosted runner in studio mode and push the cart in.
+  const indexHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nova64 Cart - maigeXR</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #090a0f; }
+        iframe { width: 100%; height: 100%; border: 0; display: block; }
+    </style>
+</head>
+<body>
+    <iframe
+        id="nova64"
+        src="https://nova64.io/cart-runner?studio=1&clearColor=0x090a0f"
+        allow="xr-spatial-tracking; fullscreen; gamepad; autoplay"></iframe>
+    <script src="./cart.js"></script>
+    <script>
+        // The runner announces itself with EXECUTE_READY, then accepts the cart.
+        var frame = document.getElementById('nova64');
+        window.addEventListener('message', function (event) {
+            if (event.source !== frame.contentWindow) return;
+            if (event.data && event.data.type === 'EXECUTE_READY') {
+                frame.contentWindow.postMessage({ type: 'EXECUTE_CODE', code: window.NOVA64_CART }, '*');
+            }
+            if (event.data && event.data.type === 'EXECUTE_ERROR') {
+                console.error('Nova64 cart error:', event.data.error);
+            }
+        });
+    </script>
+</body>
+</html>`
+
+  // The cart as a string for the standalone page, since the studio runner takes source.
+  const cartJs = `// Nova64 cart source, exported from maigeXR.
+// Kept as a string because the studio runner evaluates cart source directly.
+window.NOVA64_CART = ${JSON.stringify(code)};
+`
+
+  const files: Record<string, string> = {
+    'index.html': indexHtml,
+    'cart.js': cartJs,
+    'code.js': code,
+    'package.json': packageJson
+  }
+
+  if (includeReadme) {
+    files['README.txt'] = `maigeXR - Nova64 Cart Export
+============================
+
+This cart was created with maigeXR (https://maigexr.com)
+Nova64 is a retro 3D fantasy console: https://nova64.io
+
+WHAT IS IN HERE:
+- code.js      The cart itself: init(), update(dt), draw()
+- index.html   Zero-install preview; drives the hosted Nova64 runner
+- cart.js      code.js wrapped as a string, used by index.html
+- package.json For the real CLI workflow
+
+OPTION 1 - Zero install:
+1. Serve this folder over HTTP (e.g. npx serve .)
+2. Open index.html
+   Opening it straight off the filesystem may be blocked by the browser,
+   so prefer a local server.
+
+OPTION 2 - Nova64 CLI (recommended for real development):
+1. npm install
+2. npx nova64 dev
+3. Open the URL it prints (default http://localhost:5173)
+   Browse 60+ bundled templates with: npx nova64 template
+
+CART SHAPE:
+Nova64 carts expose three lifecycle functions:
+  init()        once, for setup (may be async)
+  update(dt)    every frame, dt in seconds
+  draw()        optional 2D HUD overlay
+
+Note: this export uses plain function declarations with no export keyword,
+which is what the studio runner requires. File-based carts loaded by the CLI
+may instead use "export function init()".
+
+API:
+Everything is namespaced under nova64.* - nova64.scene, nova64.camera,
+nova64.light, nova64.fx, nova64.draw, nova64.input, nova64.util and more.
+Reference: https://nova64.io/docs/api-3d
+
+REQUIREMENTS:
+- Modern web browser with WebGL
+- Node.js 18+ for the CLI workflow
 
 Generated: ${new Date().toISOString()}
 `

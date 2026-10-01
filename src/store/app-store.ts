@@ -372,11 +372,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   settings: defaultSettings,
 
   updateSettings: (newSettings) => {
-    set((state) => {
-      const updated = { ...state.settings, ...newSettings }
+    const updated = { ...get().settings, ...newSettings }
+
+    // Apply to state first so the UI responds even if persistence fails.
+    set({ settings: updated })
+
+    // Persisting must never take down the UI. This used to run inside the set()
+    // updater, so a failed write threw straight out of the React event handler
+    // that triggered it — switching 3D library produced an uncaught
+    // "Database not initialized" instead of a degraded-but-working app. A
+    // settings write failing is worth a warning, not a crash.
+    try {
       dbService.saveSettings(updated)
-      return { settings: updated }
-    })
+    } catch (error) {
+      console.warn('Could not persist settings; continuing with in-memory values.', error)
+    }
   },
 
   // ==================== Library State ====================

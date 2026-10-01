@@ -26,6 +26,7 @@ export function SnippetListItem({ snippet, onLoad, onDelete }: SnippetListItemPr
       'threejs': 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
       'react-three-fiber': 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
       'aframe': 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+      'nova64': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900 dark:text-fuchsia-300',
       'reactylon': 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
     }
     return colors[library] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'

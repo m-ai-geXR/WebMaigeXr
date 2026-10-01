@@ -195,6 +195,70 @@ function App() {
 export default App`
   },
   {
+    id: 'nova64-starfield',
+    title: 'Nova64 Retro Runner',
+    description: 'Low-poly fantasy-console scene with bloom, fog and a 2D HUD',
+    library: 'nova64',
+    category: 'basic',
+    code: `// Nova64 cart - no export keyword, the studio runner uses new Function()
+let shipId;
+let pillars = [];
+let elapsed = 0;
+
+function init() {
+  nova64.scene.setClearColor(0x05060f);
+  nova64.camera.setCameraPosition(0, 3.5, 9);
+  nova64.camera.setCameraTarget(0, 1, 0);
+
+  nova64.light.setAmbientLight(0x303050, 0.9);
+  nova64.light.setLightDirection(-0.4, -1, -0.5);
+  nova64.light.setFog(0x05060f, 14, 60);
+
+  // The "ship" - a flat-shaded cone reads as a retro fighter
+  shipId = nova64.scene.createCone(0.8, 2, 0xffcc33, [0, 1, 0]);
+  nova64.scene.setFlatShading(shipId, true);
+  nova64.scene.setRotation(shipId, Math.PI / 2, 0, 0);
+
+  // A corridor of pillars to fly through
+  for (let i = 0; i < 14; i++) {
+    const side = i % 2 === 0 ? -5 : 5;
+    const id = nova64.scene.createCube(1.2, 6, 1.2, 0x2a3f6b, [side, 2, -i * 6]);
+    nova64.scene.setFlatShading(id, true);
+    pillars.push(id);
+  }
+
+  nova64.scene.createPlane(80, 160, 0x101828, [0, -1, -40]);
+
+  nova64.fx.enableBloom();
+  nova64.fx.setBloomStrength(0.8);
+  nova64.fx.enableVignette();
+}
+
+function update(dt) {
+  elapsed += dt;
+
+  // Bank the ship with arrow keys / gamepad, otherwise let it drift
+  let x = Math.sin(elapsed) * 2.5;
+  if (nova64.input.btn(0)) x -= 3 * dt;
+  if (nova64.input.btn(1)) x += 3 * dt;
+  nova64.scene.setPosition(shipId, x, 1 + Math.sin(elapsed * 3) * 0.2, 0);
+
+  // Scroll the pillars toward the camera and recycle them
+  for (let i = 0; i < pillars.length; i++) {
+    const p = nova64.scene.getPosition(pillars[i]);
+    let z = p[2] + dt * 14;
+    if (z > 12) z -= 84;
+    nova64.scene.setPosition(pillars[i], p[0], p[1], z);
+  }
+}
+
+function draw() {
+  const cyan = nova64.draw.rgba8(80, 230, 255, 255);
+  nova64.draw.print('NOVA64', 8, 8, cyan, 1);
+  nova64.draw.print('DIST ' + Math.floor(elapsed * 14), 8, 22, cyan, 1);
+}`
+  },
+  {
     id: 'aframe-vr',
     title: 'A-Frame VR Scene',
     description: 'WebXR VR scene with A-Frame',
