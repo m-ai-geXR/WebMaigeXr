@@ -2,6 +2,8 @@
 
 **AI-powered 3D and Extended Reality development, as a desktop app.**
 
+[![Sponsor seacloud9](https://img.shields.io/badge/Sponsor-seacloud9-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/seacloud9)
+
 Describe a scene in plain English; m{ai}geXR writes the code for your chosen 3D
 framework, runs it next to the editor, and keeps editing it as you keep talking.
 
