@@ -1,346 +1,314 @@
-# XRAiAssistant Station
+# m{ai}geXR Desktop
 
-**🔒 LOCAL DEVELOPMENT ONLY - DO NOT DEPLOY TO PRODUCTION**
+**AI-powered 3D and Extended Reality development, as a desktop app.**
 
-**AI-powered Extended Reality development platform for local web development**
+Describe a scene in plain English; m{ai}geXR writes the code for your chosen 3D
+framework, runs it next to the editor, and keeps editing it as you keep talking.
 
-A NextJS web application that brings the power of XRAiAssistant to your local browser for development and prototyping. Features AI-assisted 3D development, multi-library support, and localStorage persistence.
+This repository is the **desktop and web client** (`maigexr-desktop`). It ships
+two ways from one codebase:
 
-## ⚠️ SECURITY WARNING - LOCALHOST ONLY
+- **Electron app** for macOS, Windows and Linux — the primary target
+- **Next.js dev server** at `http://localhost:3000` for development
 
-**🚫 THIS APPLICATION IS NOT DESIGNED FOR PRODUCTION DEPLOYMENT**
-
-- **API Key Storage**: Uses localStorage which exposes keys in production
-- **Local Development Only**: Designed exclusively for `http://localhost:3000`
-- **Security Risk**: Public deployment would expose all users' API keys
-- **Use Case**: Local XR prototyping and development environment only
-
-## 🚀 Features
-
-### 🤖 **Multi-Provider AI Integration**
-- **Together.ai** (Primary) - DeepSeek R1 70B, Llama 3.3 70B, Qwen models  
-- **OpenAI** - GPT-4o and other models
-- **Anthropic** - Claude 3.5 Sonnet
-- Dual-parameter control (Temperature + Top-p) with intelligent descriptions
-- Real-time streaming responses
-
-### 🎯 **3D Library Support**
-- **Babylon.js v8.22.3** - Professional WebGL engine
-- **Three.js r171** - Popular lightweight 3D library  
-- **React Three Fiber 8.17.10** - Declarative React renderer
-- Automatic framework switching with specialized AI prompts
-- Live code execution in sandboxed iframe
-
-### 🛠️ **Professional Development Environment**
-- **Monaco Editor** - Full IntelliSense and syntax highlighting
-- **Split-view interface** - Code editor + 3D scene preview
-- **Real-time execution** - See your changes instantly
-- **Code management** - Upload, download, and template system
-- **Error handling** - Comprehensive error display and debugging
-
-### 📱 **Progressive Web App**
-- **Offline capable** - Works without internet connection
-- **Installable** - Add to home screen on mobile/desktop
-- **localStorage persistence** - All settings and code saved locally
-- **Responsive design** - Optimized for all screen sizes
-- **Service worker caching** - Fast loading and offline support
-
-### 🔐 **Privacy & Security**
-- **Local storage only** - No data sent to external servers (except AI APIs)
-- **Encrypted API keys** - Secure storage of credentials
-- **Sandboxed execution** - Safe code execution environment
-- **No telemetry** - Complete privacy protection
-
-## 🏗️ Architecture
-
-### **Tech Stack**
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling
-- **Zustand** - Lightweight state management
-- **Monaco Editor** - Professional code editing
-- **React Hot Toast** - Beautiful notifications
-
-### **AI Integration**
-```typescript
-// Multi-provider AI service with streaming support
-class AIService {
-  async generateResponse(prompt: string, options: {
-    provider: string    // 'together' | 'openai' | 'anthropic'
-    model: string      // Model-specific ID
-    apiKey: string     // User-provided API key
-    temperature: number // 0.0-2.0 creativity control
-    topP: number       // 0.1-1.0 vocabulary diversity
-  }): Promise<AIResponse>
-  
-  async generateStreamingResponse(
-    prompt: string,
-    options: AIOptions,
-    onChunk: (chunk: StreamingResponse) => void
-  ): Promise<void>
-}
-```
-
-### **Library3D System**
-```typescript
-interface Library3D {
-  id: string           // 'babylonjs' | 'threejs' | 'react-three-fiber'
-  name: string         // Human-readable name
-  version: string      // Library version
-  description: string  // Feature description
-  cdnUrls: string[]   // CDN resources to load
-  systemPrompt: string // AI instructions for this library
-  codeTemplate: string // Starting template code
-}
-```
-
-### **State Management**
-```typescript
-// Zustand store with localStorage persistence
-const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      // Chat state
-      messages: ChatMessage[]
-      addMessage: (message) => void
-      
-      // Code state  
-      currentCode: string
-      setCurrentCode: (code) => void
-      
-      // Settings state
-      settings: AppSettings
-      updateSettings: (settings) => void
-      
-      // Library state
-      libraries: Library3D[]
-      getCurrentLibrary: () => Library3D
-      
-      // AI provider state
-      providers: AIProvider[]
-      getCurrentProvider: () => AIProvider
-    }),
-    { name: 'xrai-assistant-storage' }
-  )
-)
-```
-
-## 🛠️ Getting Started
-
-### **Prerequisites**
-- **Node.js 20+** - JavaScript runtime (minimum version 20.0.0)
-- **pnpm 8+** - Package manager (preferred over npm)
-- **Modern browser** - Chrome, Firefox, Safari, Edge
-
-### **Installation**
-```bash
-# Clone repository
-git clone <repository-url>
-cd XrAiAssistantStation
-
-# Install dependencies with pnpm
-pnpm install
-
-# Start LOCAL development server
-pnpm run dev
-```
-
-### **First Setup (LOCAL DEVELOPMENT)**
-1. **Open browser** to `http://localhost:3000` (LOCALHOST ONLY)
-2. **Configure API keys** in Settings (replace "changeMe"):
-   - **Together.ai**: Get free key at [together.ai](https://together.ai)
-   - **OpenAI**: Get key at [platform.openai.com](https://platform.openai.com) 
-   - **Anthropic**: Get key at [console.anthropic.com](https://console.anthropic.com)
-3. **Select 3D library** (Babylon.js recommended for beginners)
-4. **Choose AI model** (DeepSeek R1 70B is free and powerful)
-
-**🔒 LOCAL STORAGE SECURITY**: API keys stored in browser localStorage - secure for local development only!
-
-### **First 3D Scene**
-1. **Go to Chat tab** and ask: *"Create a spinning cube with rainbow colors"*
-2. **AI generates code** automatically using your selected library
-3. **Click "Send to Playground"** to open the code editor
-4. **Click "Run"** to see your AI-created 3D scene!
-
-## 📁 Project Structure
-
-```
-XrAiAssistantStation/
-├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── layout.tsx         # Root layout with PWA config
-│   │   ├── page.tsx           # Main application page
-│   │   └── globals.css        # Global styles
-│   ├── components/
-│   │   ├── chat/              # AI conversation interface
-│   │   │   ├── chat-interface.tsx    # Main chat UI
-│   │   │   └── chat-message.tsx      # Message display
-│   │   ├── playground/        # 3D development environment
-│   │   │   ├── playground-view.tsx   # Split-view layout
-│   │   │   ├── code-editor.tsx       # Monaco editor wrapper
-│   │   │   └── scene-renderer.tsx    # 3D scene iframe
-│   │   ├── settings/          # Configuration panel
-│   │   │   └── settings-panel.tsx    # Settings modal
-│   │   ├── layout/            # Navigation components
-│   │   │   ├── header.tsx            # Top header
-│   │   │   └── bottom-navigation.tsx # Tab navigation
-│   │   └── theme-provider.tsx # Dark/light mode
-│   ├── lib/
-│   │   ├── ai-service.ts      # Multi-provider AI client
-│   │   └── utils.ts           # Helper functions
-│   └── store/
-│       └── app-store.ts       # Zustand state management
-├── public/
-│   ├── manifest.json          # PWA manifest
-│   ├── sw.js                  # Service worker
-│   └── icons/                 # App icons
-├── package.json               # Dependencies and scripts
-├── tailwind.config.js         # Tailwind CSS configuration
-├── next.config.js             # Next.js + PWA configuration
-└── tsconfig.json              # TypeScript configuration
-```
-
-## 🎯 Usage Examples
-
-### **Creating 3D Scenes**
-```typescript
-// Ask AI natural language questions:
-"Create a spinning cube with rainbow colors"
-"Make a solar system with orbiting planets" 
-"Build a particle system with floating spheres"
-"Generate a procedural landscape with trees"
-
-// AI automatically:
-// 1. Understands your request
-// 2. Generates appropriate code for your selected library
-// 3. Includes proper lighting, cameras, and materials
-// 4. Provides working, executable code
-```
-
-### **Debugging & Learning**
-```typescript
-// Ask for help with existing code:
-"Why isn't my mesh rotating?"
-"How do I add physics to this scene?"
-"Explain what this lighting setup does"
-"Optimize this code for better performance"
-
-// AI provides:
-// 1. Detailed explanations
-// 2. Code corrections
-// 3. Best practices
-// 4. Performance tips
-```
-
-### **Framework Switching**
-```typescript
-// Switch between libraries seamlessly:
-// 1. Change library in Settings
-// 2. Ask AI to "convert this to Three.js"
-// 3. AI adapts code to new framework
-// 4. Maintains same functionality
-
-// Supported conversions:
-// Babylon.js ↔ Three.js ↔ React Three Fiber
-```
-
-## ⚙️ Configuration
-
-### **AI Parameters**
-- **Temperature (0.0-2.0)**: Controls creativity vs precision
-  - `0.0-0.3`: Focused, deterministic (debugging)
-  - `0.4-0.8`: Balanced creativity (general use)
-  - `0.9-2.0`: Experimental, creative (exploration)
-
-- **Top-p (0.1-1.0)**: Controls vocabulary diversity
-  - `0.1-0.5`: Precise vocabulary (technical code)
-  - `0.6-0.9`: Balanced vocabulary (most use cases)
-  - `0.9-1.0`: Full vocabulary (creative scenarios)
-
-### **3D Libraries**
-- **Babylon.js**: Best for complex 3D applications, WebXR, physics
-- **Three.js**: Lightweight, popular, extensive community
-- **React Three Fiber**: Declarative React patterns, component-based
-
-### **Storage**
-All data persists in browser localStorage:
-- API keys (encrypted)
-- Chat history
-- Code snippets
-- User preferences
-- Library settings
-
-## 🚀 Local Development Only
-
-### **Build for Local Testing**
-```bash
-# Create optimized build for LOCAL testing only
-pnpm run build
-
-# Start production server LOCALLY
-pnpm run start
-
-# ⚠️ DO NOT DEPLOY - FOR LOCAL TESTING ONLY
-```
-
-### **🚫 NO PRODUCTION DEPLOYMENT**
-**This application is NOT suitable for public deployment:**
-- **Security Risk**: API keys exposed in client-side code
-- **localStorage Vulnerability**: Keys accessible to all site visitors
-- **Local Development Only**: Designed exclusively for localhost usage
-
-### **Local PWA Installation**
-1. **Desktop**: Chrome → Install app icon in address bar
-2. **Mobile**: Add to Home Screen from browser menu  
-3. **Local Offline**: Works offline once installed (localhost only)
-
-### **🔒 For Production Deployment Consider:**
-- **Server-side API key management**
-- **OAuth authentication flows**
-- **Environment variable configuration**
-- **Secure API proxy implementation**
-
-## 🤝 Contributing
-
-We welcome contributions to make XRAiAssistant Station even better!
-
-### **Areas for Contribution**
-- **Additional 3D libraries** (A-Frame, Playcanvas, etc.)
-- **AI provider integrations** (Google Gemini, Cohere, etc.)
-- **UI/UX improvements** (animations, accessibility)
-- **Performance optimizations** (caching, lazy loading)
-- **Documentation** (tutorials, examples)
-
-### **Development Setup**
-```bash
-# Fork repository
-# Clone your fork
-git clone https://github.com/yourusername/XRAiAssistant.git
-cd XrAiAssistantStation
-
-# Install dependencies
-npm install
-
-# Start development
-npm run dev
-
-# Run type checking
-npm run type-check
-
-# Run linting
-npm run lint
-```
-
-## 📄 License
-
-See LICENSE file for details.
+The iOS and Android clients live in the sibling `iOSMaigeXr/` and
+`AndroidMaigeXr/` repositories and share the same model catalog, 3D library set
+and system prompts.
 
 ---
 
-## **XRAiAssistant Station: The Future of Web-Based XR Development**
+## Features
 
-**From idea to immersive experience in your browser.**
+### Multi-provider AI
 
-XRAiAssistant Station democratizes 3D development by making it as simple as having a conversation. Whether you're learning WebGL, prototyping XR experiences, or building professional applications, our AI-powered platform provides the tools and guidance you need.
+Five providers, selected per-session, with the model catalog defined in
+[src/store/store-defaults.ts](src/store/store-defaults.ts):
 
-**Start creating amazing 3D experiences today - no installation required, just open your browser and begin!** 🚀
+| Provider | Models |
+|---|---|
+| **Together AI** | Llama 3.3 70B (free), DeepSeek R1 70B (free), DeepSeek V3, DeepSeek R1, Llama 3.3 70B, Qwen 2.5 Coder 32B, Qwen 2.5 72B Turbo |
+| **OpenAI** | GPT-6 Astra, GPT-5.6 Sol / Terra / Luna, GPT-5.2 |
+| **Anthropic** | Claude Fable 5.1, Opus 5, Sonnet 5, Haiku 4.5, Opus 4.6, Sonnet 4.6 |
+| **Google AI** | Gemini 3.1 Pro, Gemini 2.5 Pro / Flash / Flash Lite |
+| **xAI** | Grok 4, Grok 4 Fast Reasoning, Grok 3, Grok 3 Mini, Grok Code Fast |
+
+The default is Together AI's free Llama 3.3 70B, so the app is usable without
+a paid key.
+
+**Two control modes.** The frontier models (Claude 5 series, GPT-5.6 / GPT-6)
+removed `temperature` and `top_p` and reject requests that carry them, so they
+take a discrete **Reasoning Effort** level instead — `low`, `medium`, `high`,
+`xhigh` or `max`, defaulting to `high`. Every other model keeps **Temperature**
+(0.0–2.0) and **Top-p** (0.1–1.0). The settings panel shows whichever applies
+to the selected model (`AIModelControl` in
+[src/store/app-store.ts](src/store/app-store.ts)).
+
+**Model migrations.** Retired model IDs stored in a previous session are
+remapped on load (`modelMigrations` in `store-defaults.ts`), so an old
+`claude-3-5-sonnet-*` or `gpt-4o` setting resolves to a current model instead of
+failing the request.
+
+### Six 3D libraries
+
+| Library | Version | How it runs |
+|---|---|---|
+| **Babylon.js** | 8.22.3 | CDN injection, or the Sandpack bundler in npm mode |
+| **Three.js** | r171 | CDN injection, or the Sandpack bundler in npm mode |
+| **React Three Fiber** | 8.17.10 | Always bundled through Sandpack — the default library |
+| **A-Frame** | 1.7.0 | CDN injection, WebXR VR/AR |
+| **Reactylon** | 3.2.1 | Always bundled through Sandpack |
+| **Nova64** | 0.5.2 | Embedded studio runner — see below |
+
+The React-based frameworks are bundled with Sandpack because they need a real
+build step. Babylon.js and Three.js render from CDN scripts by default, and
+switch to the Sandpack bundler when you enable npm package mode in the
+playground — which is what makes the **Package manager** panel useful. Nova64
+bypasses both and renders through its own runner.
+
+Each library carries its own system prompt and starter template, so switching
+frameworks changes what the AI generates, not just what runs.
+
+**Nova64** is a retro 3D fantasy console (N64/PS1-era low-poly rendering on top
+of Three.js) rather than a library you call. It boots its own runtime and
+accepts *carts*, so m{ai}geXR embeds Nova64's hosted runner in studio mode
+(`?studio=1`) and posts cart source into it over `postMessage`. Carts are three
+plain declarations — `init()`, `update(dt)`, `draw()` — with **no top-level
+`export`**, because the runner evaluates source with `new Function()`. The full
+design, including the two non-obvious constraints that shape it, is in
+[docs/NOVA64_INTEGRATION.md](docs/NOVA64_INTEGRATION.md).
+
+### Development environment
+
+- **Monaco editor** with IntelliSense, split-view against the live scene
+- **Sandpack** build pipeline for the React-based frameworks (R3F, Reactylon)
+- **Package manager** panel for adding dependencies to a built scene
+- **Export** to a standalone zip, and shareable scene links
+- **Snippet library** — save, tag and reload generated scenes
+- **Examples** browser with ready-made scenes per framework
+- **Favorites** and **conversation history**, persisted locally
+- **Error boundary** around the renderer so a bad scene doesn't take the app down
+
+### Local database and RAG
+
+Scenes, conversations, snippets and favorites persist in a local SQLite database
+via **sql.js** (WebAssembly). The WASM binary is copied into `public/` by
+`scripts/sql-wasm-assets.js`, which runs automatically on `predev`, `prebuild`
+and `postinstall`.
+
+If the database fails to initialize, the app now **surfaces the failure**
+instead of rendering a half-working UI — see
+[docs/DATABASE_INIT_FIX.md](docs/DATABASE_INIT_FIX.md).
+
+An embedding service plus `rag-service.ts` provide on-device retrieval over your
+own scene history, so context never leaves the machine.
+
+### Desktop integration (Electron)
+
+- **Vaporwave splash screen** on startup, visually identical to the iOS and
+  Android splashes, which hands off when the app window has actually loaded —
+  see [docs/ELECTRON_SPLASH.md](docs/ELECTRON_SPLASH.md)
+- **OS keychain** storage for API keys (`keytar`), with the encrypted store as
+  fallback
+- **Auto-updates** via `electron-updater`
+- **Native menu** and persisted window state
+- Packaged with `electron-builder` as `com.maigexr.desktop`
+
+### API key handling
+
+Keys are encrypted with **AES-256-GCM** and a **PBKDF2** key derived from a
+password you choose (100,000 iterations, random salt and IV per encryption).
+The password is held in memory for the session only and the store auto-locks on
+inactivity; see [src/lib/crypto-service.ts](src/lib/crypto-service.ts) and the
+unlock flow in [src/components/settings/api-key-unlock.tsx](src/components/settings/api-key-unlock.tsx).
+
+In the Electron build, keys go to the OS keychain instead.
+
+> **If you serve the Next.js build on a public host**, understand what you are
+> doing: requests to the AI providers are made from the client, so each visitor
+> supplies and stores their own key in their own browser. That is fine for a
+> single-user desktop app or localhost, and it is *not* a multi-tenant
+> deployment model. There is no server-side key management or auth in this
+> repository.
+
+---
+
+## Getting started
+
+### Prerequisites
+
+- **Node.js 20+**
+- **pnpm 8+** (`packageManager` is pinned to `pnpm@8.15.0`)
+
+### Install and run
+
+```bash
+pnpm install          # also stages the sql.js WASM assets
+pnpm dev              # Next.js dev server -> http://localhost:3000
+pnpm dev:electron     # or run it as a desktop window
+```
+
+### Configure a provider
+
+1. Open **Settings** (gear icon)
+2. Set an unlock password when prompted — this encrypts the key store
+3. Paste a key for the provider you want:
+   - **Google AI** — [aistudio.google.com/apikey](https://aistudio.google.com/apikey) (free tier, no card)
+   - **Together.ai** — [api.together.ai](https://api.together.ai/settings/api-keys)
+   - **OpenAI** — [platform.openai.com](https://platform.openai.com/api-keys)
+   - **Anthropic** — [console.anthropic.com](https://console.anthropic.com)
+   - **xAI** — [console.x.ai](https://console.x.ai)
+4. Pick a model and a 3D library, then save
+
+### First scene
+
+Ask for something in the chat:
+
+> Create a glowing green planet with rings and three orbiting moons
+
+The AI generates code for the selected library, which runs in the preview pane.
+Then keep going — *"make the planet blue"*, *"add stars"*, *"speed up the
+moons"* — each message edits the scene you already have rather than rebuilding
+it.
+
+---
+
+## Scripts
+
+| Script | What it does |
+|---|---|
+| `pnpm dev` | Next.js dev server |
+| `pnpm dev:electron` | Dev server plus an Electron window |
+| `pnpm build` | Next.js production build |
+| `pnpm build:static` | Static export for the Electron package |
+| `pnpm build:electron` | Static export + compile + package for the current OS |
+| `pnpm build:electron:mac` / `:win` / `:linux` / `:all` | Package for specific targets |
+| `pnpm electron:compile` | Compile `electron/` TypeScript |
+| `pnpm test` | Vitest suite (single run) |
+| `pnpm test:watch` | Vitest in watch mode |
+| `pnpm type-check` | `tsc --noEmit` on the app |
+| `pnpm type-check:electron` | `tsc --noEmit` on the Electron main process |
+| `pnpm lint` | ESLint via `next lint` |
+| `pnpm sql-wasm` / `sql-wasm:check` | Stage / verify the sql.js WASM assets |
+
+---
+
+## Tests
+
+```bash
+pnpm test
+```
+
+33 tests across 3 files, covering the regressions that were expensive to find:
+
+- [tests/app-store-settings.test.ts](tests/app-store-settings.test.ts) — settings
+  persistence, including the "database not initialized" path
+- [tests/nova64-integration.test.ts](tests/nova64-integration.test.ts) — cart
+  shape, the studio-host handshake, and the `export` constraint
+- [tests/sql-wasm-assets.test.ts](tests/sql-wasm-assets.test.ts) — the WASM
+  staging script
+
+---
+
+## Tech stack
+
+**App** — Next.js 14 (App Router), React 18, TypeScript 5.3, Tailwind CSS 3.3,
+Zustand 4.4, Framer Motion, Monaco Editor 0.45, react-markdown
+
+**Desktop** — Electron 28, electron-builder 24, electron-updater,
+electron-log, keytar (optional)
+
+**Data** — sql.js 1.13 (WebAssembly SQLite), Web Crypto API, better-sqlite3
+(optional, Electron)
+
+**Build / sandbox** — `@codesandbox/sandpack-react` and `sandpack-client`,
+jszip
+
+**Testing** — Vitest 1.6
+
+---
+
+## Project structure
+
+```
+WebMaigeXr/
+├── electron/                      # Electron main process (TypeScript)
+│   ├── main.ts, index.ts          # app lifecycle, window creation
+│   ├── splash.html                # vaporwave startup scene
+│   ├── auto-updater.ts            # electron-updater wiring
+│   ├── database.ts                # native SQLite path
+│   ├── keychain.ts                # OS keychain for API keys
+│   ├── menu.ts, window-state.ts   # native menu, persisted geometry
+│   └── preload.ts, splash-preload.ts
+├── src/
+│   ├── app/                       # Next.js App Router + API routes
+│   ├── components/
+│   │   ├── chat/                  # conversation UI
+│   │   ├── playground/            # Monaco, renderers, Sandpack, Nova64
+│   │   ├── conversation/          # history list
+│   │   ├── snippets/              # snippet library
+│   │   ├── examples/              # example browser
+│   │   ├── settings/              # settings panel + key unlock
+│   │   ├── ads/                   # banner / interstitial
+│   │   └── layout/                # header, bottom navigation
+│   ├── lib/
+│   │   ├── ai-service.ts          # multi-provider client with streaming
+│   │   ├── crypto-service.ts      # AES-GCM key storage
+│   │   ├── db-service.ts          # sql.js database
+│   │   ├── rag-service.ts         # retrieval over local history
+│   │   ├── embedding-service.ts   # embeddings
+│   │   ├── nova64-runner.ts       # studio-host bridge
+│   │   ├── build-service.ts       # React framework builds
+│   │   ├── codesandbox-service.ts # Sandpack integration
+│   │   ├── export-service.ts      # zip export
+│   │   ├── sharing-service.ts     # shareable links
+│   │   ├── favorites-service.ts
+│   │   ├── app-config.ts, platform.ts
+│   │   └── utils.ts
+│   └── store/
+│       ├── app-store.ts           # Zustand store
+│       └── store-defaults.ts      # providers, models, 3D libraries, prompts
+├── scripts/
+│   ├── sql-wasm-assets.js         # stage sql.js WASM into public/
+│   └── dev-electron.js            # dev orchestration
+├── tests/                         # Vitest
+├── docs/
+│   ├── NOVA64_INTEGRATION.md      # cross-platform Nova64 design notes
+│   ├── DATABASE_INIT_FIX.md
+│   └── ELECTRON_SPLASH.md
+├── electron-builder.yml
+└── next.config.js
+```
+
+---
+
+## Known issues
+
+- **`pnpm type-check` fails on a clean checkout** with a single error:
+  `TS2688: Cannot find type definition file for 'minimatch'`. This is a missing
+  transitive `@types/minimatch` package, not an error in app code — the app
+  builds and the tests pass. Adding `@types/minimatch` as a dev dependency, or
+  excluding it via `typeRoots`/`types` in `tsconfig.json`, clears it.
+- **The Sandpack-bundled frameworks need network access.** React Three Fiber
+  and Reactylon always build through Sandpack, so they inherit CodeSandbox's
+  availability. Babylon.js, Three.js and A-Frame run from CDN scripts, and
+  Nova64 runs in its own embedded runner, so those three work without the
+  bundler. The Android client disables Reactylon outright for this reason.
+
+---
+
+## Documentation
+
+- [CLAUDE.md](CLAUDE.md) — development guide and architecture notes
+- [docs/NOVA64_INTEGRATION.md](docs/NOVA64_INTEGRATION.md) — how Nova64 is wired
+  into all three platforms, and why
+- [docs/ELECTRON_SPLASH.md](docs/ELECTRON_SPLASH.md) — splash screen and startup
+  handoff
+- [docs/DATABASE_INIT_FIX.md](docs/DATABASE_INIT_FIX.md) — sql.js startup and
+  failure surfacing
+
+---
+
+## License
+
+MIT, as declared in `package.json`. Note that no `LICENSE` file is currently
+committed in this repository — only `mcp-webgpu/` has one. Worth adding.
