@@ -307,6 +307,9 @@ WebMaigeXr/
   handoff
 - [docs/DATABASE_INIT_FIX.md](docs/DATABASE_INIT_FIX.md) — sql.js startup and
   failure surfacing
+- [docs/CHAT_MARKDOWN_RENDERING.md](docs/CHAT_MARKDOWN_RENDERING.md) — how a
+  markdown line becomes a chat bubble on all three clients, and the layout trap
+  that broke wrapping on iOS and Web
 
 ---
 
