@@ -33,7 +33,10 @@ export function ChatMessage({ message, onExtractCode, onCopy, onDownload }: Chat
 
       {/* Message content */}
       <div className={`flex-1 max-w-[80%] ${isUser ? 'text-right' : 'text-left'}`}>
-        <div className={`inline-block p-3 rounded-lg ${
+        {/* text-left: the wrapper's text-right places the bubble on the right,
+            but it is inherited, so without this a multi-line prompt renders
+            right-aligned with a ragged left edge and is hard to read. */}
+        <div className={`inline-block p-3 rounded-lg text-left ${
           isUser
             ? 'bg-blue-600 text-white'
             : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
