@@ -76,18 +76,18 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-brand-bg  shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="flex items-center justify-between p-6 border-b border-brand-divider flex-shrink-0">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Settings</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <h2 className="text-xl font-semibold text-brand-text">Settings</h2>
+            <p className="text-sm text-brand-muted mt-1">
               Configure your AI providers and 3D libraries
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-2  hover:bg-brand-surface transition-colors"
           >
             <X size={20} />
           </button>
@@ -99,16 +99,16 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             {/* Encryption Section */}
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                <h3 className="text-lg font-medium text-brand-text flex items-center">
                   <Shield className="mr-2" size={20} />
                   API Key Security
                 </h3>
               </div>
 
-              <div className={`p-4 rounded-lg border ${
+              <div className={`p-4  border ${
                 encryptionEnabled
                   ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                  : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                  : 'bg-brand-surface border-brand-divider'
               }`}>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -116,14 +116,14 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                       {encryptionEnabled ? (
                         <Lock className="text-green-600 dark:text-green-400" size={16} />
                       ) : (
-                        <Unlock className="text-gray-600 dark:text-gray-400" size={16} />
+                        <Unlock className="text-brand-muted" size={16} />
                       )}
-                      <h4 className="font-medium text-gray-900 dark:text-white">
+                      <h4 className="font-medium text-brand-text">
                         {encryptionEnabled ? 'Encryption Enabled' : 'Encryption Disabled'}
                       </h4>
                     </div>
 
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-brand-muted">
                       {encryptionEnabled ? (
                         <>
                           Your API keys are encrypted with AES-256-GCM.
@@ -140,7 +140,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                       <button
                         onClick={handleLockSession}
                         disabled={isLocked}
-                        className="flex items-center space-x-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                        className="flex items-center space-x-1 px-3 py-2 bg-green-600 text-white  hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                       >
                         <Lock size={14} />
                         <span>{isLocked ? 'Locked' : 'Lock Now'}</span>
@@ -148,7 +148,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                     ) : (
                       <button
                         onClick={handleEnableEncryption}
-                        className="flex items-center space-x-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                        className="flex items-center space-x-1 px-3 py-2 bg-brand-accent text-white hover:opacity-90 transition-colors text-sm"
                       >
                         <Shield size={14} />
                         <span>Enable</span>
@@ -159,7 +159,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
                 {encryptionEnabled && (
                   <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
-                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    <ul className="text-xs text-brand-muted space-y-1">
                       <li>• Auto-locks after 30 minutes of inactivity</li>
                       <li>• Password never stored, only in memory</li>
                       <li>• 100,000 PBKDF2 iterations</li>
@@ -171,14 +171,14 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
             {/* AI Provider Section */}
             <section>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-medium text-brand-text mb-4">
                 AI Provider Configuration
               </h3>
               
               {/* Provider Selection */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-brand-text mb-2">
                     AI Provider
                   </label>
                   <select
@@ -191,7 +191,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                         handleSettingChange('selectedModel', newProvider.models[0]?.id || '')
                       }
                     }}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-brand-divider  bg-brand-bg text-brand-text focus:outline-none focus:border-brand-accent"
                   >
                     {providers.map(provider => (
                       <option key={provider.id} value={provider.id}>
@@ -204,13 +204,13 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 {/* Model Selection */}
                 {currentProvider && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-brand-text mb-2">
                       Model
                     </label>
                     <select
                       value={localSettings.selectedModel}
                       onChange={(e) => handleSettingChange('selectedModel', e.target.value)}
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full p-3 border border-brand-divider  bg-brand-bg text-brand-text focus:outline-none focus:border-brand-accent"
                     >
                       {currentProvider.models.map(model => (
                         <option key={model.id} value={model.id}>
@@ -219,7 +219,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                       ))}
                     </select>
                     {currentModel && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      <p className="text-sm text-brand-muted mt-1">
                         {currentModel.description}
                       </p>
                     )}
@@ -228,7 +228,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
                 {/* API Keys */}
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-brand-text">
                     API Keys
                   </label>
                   {providers.map(provider => {
@@ -236,7 +236,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                     const isCurrentProvider = provider.id === localSettings.selectedProvider
                     return (
                       <div key={provider.id} className="relative">
-                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                        <label className="block text-xs text-brand-muted mb-1">
                           {provider.name}
                           {isCurrentProvider && (
                             <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
@@ -250,10 +250,10 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                             value={localSettings.apiKeys[provider.id] || ''}
                             onChange={(e) => handleApiKeyChange(provider.id, e.target.value)}
                             placeholder={`Enter your ${provider.name} API key`}
-                            className={`w-full p-3 pr-12 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            className={`w-full p-3 pr-12 border  bg-brand-bg text-brand-text focus:outline-none focus:border-brand-accent ${
                               isCurrentProvider && !validation.isValid 
                                 ? 'border-red-300 dark:border-red-600' 
-                                : 'border-gray-300 dark:border-gray-600'
+                                : 'border-brand-divider'
                             }`}
                           />
                           <button
@@ -283,11 +283,11 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
             {/* Model Parameters */}
             <section>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-medium text-brand-text mb-4">
                 Model Parameters
               </h3>
               
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+              <div className="bg-brand-surface  p-4 mb-4">
                 <div className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
                   Current Configuration
                 </div>
@@ -300,7 +300,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
               {usesEffortControl ? (
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-brand-text">
                     Reasoning Effort
                   </label>
                   <div className="grid grid-cols-5 gap-1">
@@ -309,27 +309,27 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                         key={level.id}
                         type="button"
                         onClick={() => handleSettingChange('effort', level.id)}
-                        className={`px-2 py-2 text-xs rounded-md border transition-colors ${
+                        className={`px-2 py-2 text-xs  border transition-colors ${
                           localSettings.effort === level.id
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            ? 'bg-brand-accent text-white border-blue-600'
+                            : 'bg-brand-bg text-brand-text border-brand-divider hover:bg-gray-50 dark:hover:bg-gray-700'
                         }`}
                       >
                         {level.name}
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-brand-muted">
                     {currentEffort?.summary}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-brand-muted">
                     This model sets reasoning depth instead of temperature and top-p.
                   </p>
                 </div>
               ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-brand-text mb-2">
                     Temperature: {localSettings.temperature}
                   </label>
                   <input
@@ -339,16 +339,16 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                     step="0.1"
                     value={localSettings.temperature}
                     onChange={(e) => handleSettingChange('temperature', parseFloat(e.target.value))}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-brand-surface  appearance-none cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <div className="flex justify-between text-xs text-brand-muted mt-1">
                     <span>Focused (0.0)</span>
                     <span>Creative (2.0)</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-brand-text mb-2">
                     Top-p: {localSettings.topP}
                   </label>
                   <input
@@ -358,9 +358,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                     step="0.1"
                     value={localSettings.topP}
                     onChange={(e) => handleSettingChange('topP', parseFloat(e.target.value))}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-brand-surface  appearance-none cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <div className="flex justify-between text-xs text-brand-muted mt-1">
                     <span>Precise (0.1)</span>
                     <span>Diverse (1.0)</span>
                   </div>
@@ -371,18 +371,18 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
             {/* 3D Library Selection */}
             <section>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-medium text-brand-text mb-4">
                 3D Library
               </h3>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-brand-text mb-2">
                   Selected Library
                 </label>
                 <select
                   value={localSettings.selectedLibrary}
                   onChange={(e) => handleSettingChange('selectedLibrary', e.target.value)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-brand-divider  bg-brand-bg text-brand-text focus:outline-none focus:border-brand-accent"
                 >
                   {libraries.map(library => (
                     <option key={library.id} value={library.id}>
@@ -391,7 +391,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   ))}
                 </select>
                 {currentLibrary && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                  <p className="text-sm text-brand-muted mt-2">
                     {currentLibrary.description}
                   </p>
                 )}
@@ -400,12 +400,12 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
             {/* Appearance */}
             <section>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-medium text-brand-text mb-4">
                 Appearance
               </h3>
 
               <div className="mb-5">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-brand-text mb-2">
                   Theme
                 </label>
                 <div className="flex gap-2">
@@ -414,10 +414,10 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                       key={option}
                       type="button"
                       onClick={() => handleSettingChange('theme', option)}
-                      className={`flex-1 px-3 py-2 text-sm capitalize border rounded-lg transition-colors ${
+                      className={`flex-1 px-3 py-2 text-sm capitalize border  transition-colors ${
                         localSettings.theme === option
                           ? 'border-transparent text-white'
-                          : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          : 'border-brand-divider text-brand-text hover:bg-brand-surface'
                       }`}
                       style={
                         localSettings.theme === option
@@ -429,13 +429,13 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-brand-muted mt-1">
                   System follows your operating system setting.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-brand-text mb-2">
                   Custom CSS (Optional)
                 </label>
                 <textarea
@@ -444,9 +444,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   placeholder={':root {\n  --brand-accent: #2050e0;\n}'}
                   rows={6}
                   spellCheck={false}
-                  className="w-full p-3 font-mono text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                  className="w-full p-3 font-mono text-xs border border-brand-divider  bg-brand-bg text-brand-text focus:outline-none focus:border-brand-accent resize-y"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-brand-muted mt-1">
                   Applied last, so it overrides the brand theme. Override the
                   tokens rather than individual rules where you can:{' '}
                   <code className="font-mono">--brand-accent</code>,{' '}
@@ -459,12 +459,12 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
             {/* System Prompt */}
             <section>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-medium text-brand-text mb-4">
                 System Prompt
               </h3>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-brand-text mb-2">
                   Custom Instructions (Optional)
                 </label>
                 <textarea
@@ -472,9 +472,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   onChange={(e) => handleSettingChange('systemPrompt', e.target.value)}
                   placeholder="Add custom instructions for the AI assistant..."
                   rows={4}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full p-3 border border-brand-divider  bg-brand-bg text-brand-text focus:outline-none focus:border-brand-accent resize-none"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-brand-muted mt-1">
                   This will be added to the library-specific system prompt.
                 </p>
               </div>
@@ -483,8 +483,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="flex items-center justify-between p-6 border-t border-brand-divider bg-brand-surface flex-shrink-0">
+          <div className="text-sm text-brand-muted">
             {hasChanges ? 'You have unsaved changes' : 'All changes saved'}
           </div>
           
@@ -492,7 +492,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             {hasChanges && (
               <button
                 onClick={handleReset}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 text-brand-text hover:bg-brand-surface transition-colors"
               >
                 <RotateCcw size={16} />
                 <span>Reset</span>
@@ -502,7 +502,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             <button
               onClick={handleSave}
               disabled={!hasChanges}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 bg-brand-accent text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Save size={16} />
               <span>Save Changes</span>

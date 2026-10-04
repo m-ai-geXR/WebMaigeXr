@@ -157,10 +157,10 @@ export function PlaygroundView() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-xl font-semibold text-brand-text mb-2">
             No 3D Library Selected
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-brand-muted">
             Please select a 3D library in settings to start coding.
           </p>
         </div>
@@ -169,15 +169,15 @@ export function PlaygroundView() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-brand-surface">
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between p-3 bg-brand-bg border-b border-brand-divider">
         <div className="flex items-center space-x-2">
           {/* Library Dropdown */}
           <div className="relative mr-2" ref={libraryDropdownRef}>
             <button
               onClick={() => setShowLibraryDropdown(!showLibraryDropdown)}
-              className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+              className="flex items-center space-x-2 px-3 py-1.5 bg-brand-surface hover:bg-brand-surface  transition-colors text-sm font-medium text-brand-text"
             >
               <CodeIcon size={14} />
               <span>{currentLibrary.name}</span>
@@ -185,20 +185,20 @@ export function PlaygroundView() {
             </button>
 
             {showLibraryDropdown && (
-              <div className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1 w-56 bg-brand-bg border border-brand-divider  shadow-lg z-50 max-h-80 overflow-y-auto">
                 <div className="py-1">
                   {libraries.map((library) => (
                     <button
                       key={library.id}
                       onClick={() => handleLibraryChange(library.id)}
-                      className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                        currentLibrary?.id === library.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                      className={`w-full text-left px-3 py-2 hover:bg-brand-surface transition-colors ${
+                        currentLibrary?.id === library.id ? 'bg-brand-surface' : ''
                       }`}
                     >
-                      <div className="font-medium text-sm text-gray-900 dark:text-white">
+                      <div className="font-medium text-sm text-brand-text">
                         {library.name}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      <div className="text-xs text-brand-muted mt-0.5">
                         v{library.version}
                       </div>
                     </button>
@@ -210,12 +210,12 @@ export function PlaygroundView() {
 
           <div className="flex items-center space-x-2">
             {useSandpack && (
-              <span className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded font-medium">
+              <span className="px-2 py-0.5 text-[10px] font-semibold tracking-label uppercase bg-brand-surface text-brand-muted border border-brand-divider">
                 {useNpmPackages ? 'npm Bundler' : 'Sandpack Live'}
               </span>
             )}
             {useNpmPackages && !useSandpack && (
-              <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded font-medium">
+              <span className="px-2 py-1 text-xs bg-brand-accent/10 text-brand-accent border border-brand-accent/30 rounded font-medium">
                 npm Mode
               </span>
             )}
@@ -223,10 +223,10 @@ export function PlaygroundView() {
           
           <button
             onClick={isRunning ? handleStopCode : handleRunCode}
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center space-x-2 px-3 py-1.5  text-sm font-medium transition-colors ${
               isRunning
                 ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-brand-accent text-white hover:opacity-90'
             }`}
           >
             {isRunning ? <Square size={16} /> : <Play size={16} />}
@@ -235,7 +235,7 @@ export function PlaygroundView() {
           
           <button
             onClick={handleResetCode}
-            className="flex items-center space-x-1 px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center space-x-1 px-2 py-1.5  text-sm text-brand-muted hover:bg-brand-surface transition-colors"
           >
             <RotateCcw size={16} />
             <span>Reset</span>
@@ -245,7 +245,7 @@ export function PlaygroundView() {
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowExamples(true)}
-            className="flex items-center space-x-1 px-2 py-1.5 rounded-lg text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors font-medium"
+            className="flex items-center space-x-1 px-2 py-1.5  text-sm text-brand-text hover:bg-brand-surface transition-colors font-medium"
           >
             <BookOpen size={16} />
             <span>Examples</span>
@@ -253,13 +253,13 @@ export function PlaygroundView() {
 
           <button
             onClick={() => setShowPackageManager(true)}
-            className="flex items-center space-x-1 px-2 py-1.5 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors font-medium"
+            className="flex items-center space-x-1 px-2 py-1.5  text-sm text-brand-accent hover:bg-brand-surface transition-colors font-medium"
             title="Manage npm packages"
           >
             <Package size={16} />
             <span>Packages</span>
             {installedPackages.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-brand-accent/10 text-brand-accent border border-brand-accent/30 rounded">
                 {installedPackages.length}
               </span>
             )}
@@ -269,7 +269,7 @@ export function PlaygroundView() {
 
           <button
             onClick={handleUploadCode}
-            className="flex items-center space-x-1 px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center space-x-1 px-2 py-1.5  text-sm text-brand-muted hover:bg-brand-surface transition-colors"
           >
             <Upload size={16} />
             <span>Upload</span>
@@ -277,7 +277,7 @@ export function PlaygroundView() {
 
           <button
             onClick={handleDownloadCode}
-            className="flex items-center space-x-1 px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center space-x-1 px-2 py-1.5  text-sm text-brand-muted hover:bg-brand-surface transition-colors"
           >
             <Download size={16} />
             <span>Download</span>
@@ -287,14 +287,14 @@ export function PlaygroundView() {
           
           <button
             onClick={toggleSplitView}
-            className="px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="px-2 py-1.5  text-sm text-brand-muted hover:bg-brand-surface transition-colors"
           >
             {splitView ? 'Scene Only' : 'Split View'}
           </button>
           
           <button
             onClick={toggleFullscreen}
-            className="p-1.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-1.5  text-brand-muted hover:bg-brand-surface transition-colors"
           >
             {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
@@ -305,7 +305,7 @@ export function PlaygroundView() {
       <div className={`flex-1 ${splitView ? 'flex' : ''}`}>
         {/* Code Editor */}
         {(splitView || !isFullscreen) && (
-          <div className={splitView ? 'w-1/2 border-r border-gray-200 dark:border-gray-700' : 'h-full'}>
+          <div className={splitView ? 'w-1/2 border-r border-brand-divider' : 'h-full'}>
             <CodeEditor
               value={currentCode}
               onChange={setCurrentCode}

@@ -57,7 +57,7 @@ export function ConversationList() {
           <div className="flex gap-2">
             <button
               onClick={handleExport}
-              className="p-2 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/10 transition-colors"
+              className="p-2 text-muted-foreground hover:text-primary  hover:bg-primary/10 transition-colors"
               title="Export database"
             >
               <Download className="w-5 h-5" />
@@ -65,7 +65,7 @@ export function ConversationList() {
 
             <button
               onClick={handleCreateNew}
-              className="p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              className="p-2 bg-primary text-primary-foreground  hover:bg-primary/90 transition-colors"
               title="New conversation"
             >
               <Plus className="w-5 h-5" />
@@ -81,7 +81,7 @@ export function ConversationList() {
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+            className="w-full pl-10 pr-4 py-2 bg-background border border-border  focus:outline-none focus:ring-2 focus:ring-primary text-sm"
           />
         </div>
 
@@ -108,7 +108,7 @@ export function ConversationList() {
             {!searchQuery && (
               <button
                 onClick={handleCreateNew}
-                className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                className="mt-4 px-4 py-2 bg-primary text-primary-foreground  hover:bg-primary/90 transition-colors text-sm"
               >
                 Create your first conversation
               </button>

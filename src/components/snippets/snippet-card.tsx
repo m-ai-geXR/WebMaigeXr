@@ -76,7 +76,7 @@ export function SnippetCard({ snippet, onLoad, onDelete }: SnippetCardProps) {
 
   return (
     <div
-      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg transition-all cursor-pointer"
+      className="bg-brand-bg border border-brand-divider  p-4 hover:shadow-lg transition-all cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onLoad(snippet)}
@@ -84,7 +84,7 @@ export function SnippetCard({ snippet, onLoad, onDelete }: SnippetCardProps) {
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate mb-1">
+          <h3 className="text-lg font-semibold text-brand-text truncate mb-1">
             {snippet.title}
           </h3>
           <div className="flex items-center space-x-2">
@@ -92,7 +92,7 @@ export function SnippetCard({ snippet, onLoad, onDelete }: SnippetCardProps) {
               {snippet.library}
             </span>
             {snippet.category && (
-              <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+              <span className="px-2 py-0.5 text-xs bg-brand-surface text-brand-text rounded-full">
                 {snippet.category}
               </span>
             )}
@@ -104,17 +104,17 @@ export function SnippetCard({ snippet, onLoad, onDelete }: SnippetCardProps) {
           <div className="flex items-center space-x-1 ml-2">
             <button
               onClick={handleCopy}
-              className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-1.5 rounded hover:bg-brand-surface transition-colors"
               title="Copy code"
             >
-              <Copy size={14} className="text-gray-600 dark:text-gray-400" />
+              <Copy size={14} className="text-brand-muted" />
             </button>
             <button
               onClick={handleShare}
-              className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-1.5 rounded hover:bg-brand-surface transition-colors"
               title="Share snippet"
             >
-              <Share2 size={14} className="text-gray-600 dark:text-gray-400" />
+              <Share2 size={14} className="text-brand-muted" />
             </button>
             <button
               onClick={(e) => {
@@ -131,13 +131,13 @@ export function SnippetCard({ snippet, onLoad, onDelete }: SnippetCardProps) {
       </div>
 
       {/* Description */}
-      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
+      <p className="text-sm text-brand-muted line-clamp-2 mb-3">
         {snippet.description || 'No description'}
       </p>
 
       {/* Code Preview */}
-      <div className="bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2 mb-3 overflow-hidden">
-        <pre className="text-xs text-gray-700 dark:text-gray-300 font-mono line-clamp-3 overflow-hidden">
+      <div className="bg-brand-surface rounded border border-brand-divider p-2 mb-3 overflow-hidden">
+        <pre className="text-xs text-brand-text font-mono line-clamp-3 overflow-hidden">
           {snippet.code}
         </pre>
       </div>
@@ -149,7 +149,7 @@ export function SnippetCard({ snippet, onLoad, onDelete }: SnippetCardProps) {
           {tags.slice(0, 3).map((tag, idx) => (
             <span
               key={idx}
-              className="px-1.5 py-0.5 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded"
+              className="px-1.5 py-0.5 text-xs bg-blue-50 dark:bg-blue-900/30 text-brand-accent rounded"
             >
               {tag}
             </span>
@@ -163,8 +163,8 @@ export function SnippetCard({ snippet, onLoad, onDelete }: SnippetCardProps) {
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+      <div className="flex items-center justify-between pt-3 border-t border-brand-divider">
+        <div className="flex items-center text-xs text-brand-muted">
           <Calendar size={12} className="mr-1" />
           {formatDate(snippet.updatedAt)}
         </div>
@@ -174,7 +174,7 @@ export function SnippetCard({ snippet, onLoad, onDelete }: SnippetCardProps) {
             e.stopPropagation()
             onLoad(snippet)
           }}
-          className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+          className="flex items-center space-x-1 px-3 py-1.5 bg-brand-accent text-white text-sm rounded hover:opacity-90 transition-colors"
         >
           <Play size={14} />
           <span>Load</span>

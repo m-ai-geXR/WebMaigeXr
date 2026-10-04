@@ -262,7 +262,7 @@ export function SandpackWebView({
             <button
               onClick={retryInitialization}
               disabled={isRetrying}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+              className="px-4 py-2 bg-red-600 text-white  hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
             >
               {isRetrying ? (
                 <>
@@ -291,7 +291,7 @@ export function SandpackWebView({
             {framework === 'react-three-fiber' ? 'React Three Fiber' : framework === 'reactylon' ? 'Reactylon' : 'React'} Sandbox
           </span>
           {framework === 'react-three-fiber' && (
-            <span className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded">
+            <span className="px-2 py-0.5 text-[10px] font-semibold tracking-label uppercase bg-brand-surface text-brand-muted border border-brand-divider">
               R3F
             </span>
           )}
@@ -300,7 +300,7 @@ export function SandpackWebView({
               Reactylon
             </span>
           )}
-          <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
+          <span className="px-2 py-1 text-xs bg-brand-accent/10 text-brand-accent border border-brand-accent/30 rounded">
             Sandpack Live
           </span>
         </div>
@@ -348,7 +348,7 @@ export function SandpackWebView({
             <button
               onClick={() => setShowShareMenu(!showShareMenu)}
               disabled={isCreatingSandbox}
-              className="flex items-center space-x-1 px-3 py-1 text-sm rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center space-x-1 px-3 py-1 text-sm bg-brand-accent text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
               title="Share to social media"
             >
               <Share size={14} />
@@ -356,7 +356,7 @@ export function SandpackWebView({
             </button>
 
             {showShareMenu && (
-              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 min-w-48">
+              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700  shadow-lg z-50 min-w-48">
                 <div className="py-1">
                   <button
                     onClick={() => handleShareToSocial('twitter')}

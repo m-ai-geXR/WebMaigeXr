@@ -360,36 +360,36 @@ export function ExamplesModal({ isOpen, onClose }: ExamplesModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col">
+      <div className="bg-brand-bg  shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-brand-divider">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-bold text-brand-text">
               Code Examples
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm text-brand-muted mt-1">
               Browse examples across all 3D libraries
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-brand-surface transition-colors"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Filter */}
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 border-b border-brand-divider">
           <div className="flex space-x-2">
             {(['all', 'basic', 'intermediate', 'advanced'] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setFilter(cat)}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-1  text-sm font-medium transition-colors ${
                   filter === cat
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    ? 'bg-brand-accent text-white'
+                    : 'bg-brand-surface text-brand-text hover:bg-brand-surface'
                 }`}
               >
                 {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -401,9 +401,9 @@ export function ExamplesModal({ isOpen, onClose }: ExamplesModalProps) {
         {/* Content */}
         <div className="flex-1 overflow-hidden flex">
           {/* Examples List */}
-          <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+          <div className="w-1/3 border-r border-brand-divider overflow-y-auto">
             {filteredExamples.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+              <div className="p-8 text-center text-brand-muted">
                 <Code2 size={48} className="mx-auto mb-4 opacity-50" />
                 <p>No examples found</p>
               </div>
@@ -413,16 +413,16 @@ export function ExamplesModal({ isOpen, onClose }: ExamplesModalProps) {
                   <button
                     key={example.id}
                     onClick={() => setSelectedExample(example)}
-                    className={`w-full text-left p-3 rounded-lg mb-2 transition-colors ${
+                    className={`w-full text-left p-3  mb-2 transition-colors ${
                       selectedExample?.id === example.id
-                        ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'bg-brand-surface border border-blue-300 dark:border-blue-700'
+                        : 'hover:bg-brand-surface'
                     }`}
                   >
-                    <div className="font-medium text-sm text-gray-900 dark:text-white mb-1">
+                    <div className="font-medium text-sm text-brand-text mb-1">
                       {example.title}
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                    <div className="text-xs text-brand-muted mb-2">
                       {example.description}
                     </div>
                     <div className="flex items-center space-x-2">
@@ -447,32 +447,32 @@ export function ExamplesModal({ isOpen, onClose }: ExamplesModalProps) {
           <div className="flex-1 flex flex-col">
             {selectedExample ? (
               <>
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1">
+                <div className="p-4 border-b border-brand-divider">
+                  <h3 className="font-semibold text-lg text-brand-text mb-1">
                     {selectedExample.title}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-brand-muted">
                     {selectedExample.description}
                   </p>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
-                  <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+                  <pre className="bg-gray-900 text-gray-100 p-4  overflow-x-auto text-sm">
                     <code>{selectedExample.code}</code>
                   </pre>
                 </div>
 
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2">
+                <div className="p-4 border-t border-brand-divider flex justify-end space-x-2">
                   <button
                     onClick={() => handleCopyExample(selectedExample.code)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium"
+                    className="flex items-center space-x-2 px-4 py-2 bg-brand-surface hover:bg-brand-surface  transition-colors text-sm font-medium"
                   >
                     <Copy size={16} />
                     <span>Copy Code</span>
                   </button>
                   <button
                     onClick={() => handleUseExample(selectedExample)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                    className="flex items-center space-x-2 px-4 py-2 bg-brand-accent hover:opacity-90 text-white  transition-colors text-sm font-medium"
                   >
                     <Play size={16} />
                     <span>Use in Playground</span>
@@ -480,7 +480,7 @@ export function ExamplesModal({ isOpen, onClose }: ExamplesModalProps) {
                 </div>
               </>
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-center h-full text-brand-muted">
                 <div className="text-center">
                   <Code2 size={64} className="mx-auto mb-4 opacity-30" />
                   <p>Select an example to view details</p>
