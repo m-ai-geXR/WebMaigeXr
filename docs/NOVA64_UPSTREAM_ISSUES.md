@@ -12,6 +12,10 @@ All file references below are paths inside that tarball.
 
 ## 1. The README's cart example cannot run in studio mode
 
+> Written up as a standalone issue ready to file at
+> <https://github.com/seacloud9/nova64/issues>:
+> [nova64-issue-studio-cart-contract.md](nova64-issue-studio-cart-contract.md)
+
 **Severity:** high — it is the first example a new user copies, and it fails
 three separate ways.
 
@@ -180,5 +184,15 @@ Worth knowing, since fixing upstream may let some of this be removed:
 - `WebMaigeXr/src/lib/scene-errors.ts` classifies both failures and tells the
   user the fix: the `export` trap by name, and a bare global by naming the
   namespaced call to use instead. The mobile playgrounds carry the same logic.
+
+A host-side fix is possible and was verified: stripping `export` and prepending
+local bindings before `EXECUTE_CODE` lands them inside the same `new Function`
+body, so `const print = nova64.draw.print` shadows `window.print`.
+
+**It was considered and declined.** Doing it safely needs a parser rather than
+regexes; a naive version breaks carts that declare their own helper, failing with
+`SyntaxError: Identifier 'print' has already been declared`; and it would leave
+carts that run here failing in a vanilla studio host. The prompt and error-message
+mitigations above cover users in the meantime without rewriting their code.
 
 See `docs/NOVA64_INTEGRATION.md` for the full integration design.
