@@ -8,6 +8,7 @@ import { extractCodeFromMessage, copyToClipboard, downloadTextFile } from '@/lib
 import { ChatMessage } from './chat-message'
 import { ExamplesModal } from '../examples/examples-modal'
 import toast from 'react-hot-toast'
+import { Wordmark } from '@/components/brand/wordmark'
 
 export function ChatInterface() {
   const {
@@ -341,7 +342,7 @@ export function ChatInterface() {
               <span className="text-white font-bold text-xl">XR</span>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome to XRAiAssistant Station
+              Welcome to <Wordmark />
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
               Start creating amazing 3D experiences with AI assistance. 

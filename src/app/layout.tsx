@@ -10,7 +10,7 @@ import { AppConfig } from '@/lib/app-config'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'XRAiAssistant Station',
+  title: 'm{ai}geXR',
   description: 'AI-powered Extended Reality development platform for the web',
   manifest: '/manifest.json',
   themeColor: '#3b82f6',

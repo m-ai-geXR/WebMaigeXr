@@ -6,6 +6,7 @@ import { APIKeyUnlock, PasswordSetup } from '@/components/settings/api-key-unloc
 import { cryptoService, type EncryptedData, type DecryptedApiKeys } from '@/lib/crypto-service'
 import { dbService } from '@/lib/db-service'
 import toast from 'react-hot-toast'
+import { Wordmark } from '@/components/brand/wordmark'
 
 interface AppInitializerProps {
   children: React.ReactNode
@@ -129,7 +130,7 @@ export function AppInitializer({ children }: AppInitializerProps) {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
-            Initializing XRAiAssistant...
+            Initializing <Wordmark />...
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             Loading database and checking encryption

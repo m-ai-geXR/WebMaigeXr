@@ -4,6 +4,7 @@ import { Settings, Moon, Sun, Monitor, BookMarked } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store/app-store'
+import { Wordmark } from '@/components/brand/wordmark'
 
 interface HeaderProps {
   onOpenSettings: () => void
@@ -45,7 +46,7 @@ export function Header({ onOpenSettings }: HeaderProps) {
         </div>
         <div>
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            XRAiAssistant Station
+            <Wordmark />
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             AI-powered XR Development

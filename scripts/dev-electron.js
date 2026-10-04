@@ -55,8 +55,13 @@ function waitForPort(port, timeout = 120000) {
   })
 }
 
+// Keep the Next.js port, the readiness probe and the Electron window agreed on
+// one value. Override with PORT when 3000 is already taken.
+const devPort = Number(process.env.PORT) || 3000
+process.env.ELECTRON_DEV_URL = process.env.ELECTRON_DEV_URL || `http://localhost:${devPort}`
+
 console.log('[dev-electron] Starting Next.js dev server...')
-nextProcess = spawn(nodeExec, [nextScript, 'dev'], {
+nextProcess = spawn(nodeExec, [nextScript, 'dev', '--port', String(devPort)], {
   stdio: 'inherit',
   env: { ...process.env },
   cwd: root
@@ -74,8 +79,8 @@ nextProcess.on('close', (code) => {
   }
 })
 
-console.log('[dev-electron] Waiting for http://localhost:3000 ...')
-waitForPort(3000)
+console.log(`[dev-electron] Waiting for ${process.env.ELECTRON_DEV_URL} ...`)
+waitForPort(devPort)
   .then(() => {
     console.log('[dev-electron] Next.js ready! Launching Electron...')
     electronProcess = spawn(nodeExec, [electronScript, '.'], {

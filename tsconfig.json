@@ -2,6 +2,11 @@
   "compilerOptions": {
     "target": "ES2015",
     "lib": ["dom", "dom.iterable", "ES2015"],
+    // Only pull in the type packages we actually use. Without this TypeScript
+    // auto-includes every @types/* it can reach, which drags in the deprecated
+    // @types/minimatch stub (no index.d.ts) via next-pwa -> clean-webpack-plugin
+    // -> del -> @types/glob and fails the build with TS2688.
+    "types": ["node", "react", "react-dom"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,

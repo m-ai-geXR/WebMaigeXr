@@ -130,17 +130,17 @@ export class SharingService {
   src="${embedUrl.toString()}"
   width="${width}"
   height="${height}"
-  title="XRAiAssistant React Three Fiber Scene"
+  title="m{ai}geXR React Three Fiber Scene"
   allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
   sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
   style="width: ${width}; height: ${height}; border: 0; border-radius: 8px; overflow: hidden;"
 ></iframe>`
   }
 
-  generateMarkdownEmbed(sandboxUrl: string, title = 'XRAiAssistant Scene'): string {
+  generateMarkdownEmbed(sandboxUrl: string, title = 'm{ai}geXR Scene'): string {
     return `## ${title}
 
-Created with [XRAiAssistant](https://github.com/seacloud9/XRAiAssistant) - AI-powered React Three Fiber development.
+Created with [m{ai}geXR](https://github.com/m-ai-geXR/WebMaigeXr) - AI-powered React Three Fiber development.
 
 [🚀 Open in CodeSandbox](${sandboxUrl})
 
@@ -153,7 +153,7 @@ ${this.generateEmbedCode(sandboxUrl, { height: '400px' })}
 - AI-generated content
 
 ---
-*Built with XRAiAssistant - The future of XR development* ✨`
+*Built with m{ai}geXR - The future of XR development* ✨`
   }
 
   private generateShareContent(
@@ -162,13 +162,13 @@ ${this.generateEmbedCode(sandboxUrl, { height: '400px' })}
     options: ShareOptions
   ): ShareContent {
     const defaultTitle = "Check out this interactive 3D scene! 🚀"
-    const defaultDescription = "Created with XRAiAssistant - AI-powered React Three Fiber development"
-    const defaultHashtags = ['XRAiAssistant', 'ReactThreeFiber', 'WebXR', 'AI', 'ThreeJS', '3D']
+    const defaultDescription = "Created with m{ai}geXR - AI-powered React Three Fiber development"
+    const defaultHashtags = ['maigeXR', 'ReactThreeFiber', 'WebXR', 'AI', 'ThreeJS', '3D']
 
     const title = options.title || defaultTitle
     const description = options.description || defaultDescription
     const hashtags = options.hashtags || defaultHashtags
-    const via = options.via || 'XRAiAssistant'
+    const via = options.via || 'maigeXR'
 
     return {
       title,
@@ -204,7 +204,7 @@ ${this.generateEmbedCode(sandboxUrl, { height: '400px' })}
         return `🚀 **${title}**\n${description}\n\n**Live Demo:** ${url}\n\n${hashtagString}`
       
       case 'email':
-        return `Subject: ${title}\n\nHi!\n\n${description}\n\nCheck it out here: ${url}\n\nThis was created using XRAiAssistant, an AI-powered tool for React Three Fiber development.\n\n${hashtagString}`
+        return `Subject: ${title}\n\nHi!\n\n${description}\n\nCheck it out here: ${url}\n\nThis was created using m{ai}geXR, an AI-powered tool for React Three Fiber development.\n\n${hashtagString}`
       
       default:
         return `${title}\n\n${description}\n\n${url}\n\n${hashtagString}`
@@ -317,7 +317,7 @@ ${this.generateEmbedCode(sandboxUrl, { height: '400px' })}
     const sandboxId = this.extractSandboxId(sandboxUrl)
     
     return {
-      title: 'Interactive 3D Scene - XRAiAssistant',
+      title: 'Interactive 3D Scene - m{ai}geXR',
       description: 'AI-generated React Three Fiber scene with interactive elements and professional lighting.',
       image: `https://codesandbox.io/api/v1/sandboxes/${sandboxId}/screenshot.png`,
       url: sandboxUrl,

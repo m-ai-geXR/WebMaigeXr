@@ -224,8 +224,8 @@ export function SandpackWebView({
       const frameworkTitle = framework === 'react-three-fiber' ? 'React Three Fiber' : framework === 'reactylon' ? 'Reactylon' : 'React'
       const result = await sharingService.shareCodeSandbox(currentCode, platform, {
         title: `Interactive ${frameworkTitle} Scene`,
-        description: 'Created with XRAiAssistant - AI-powered 3D development',
-        hashtags: ['XRAiAssistant', framework === 'react-three-fiber' ? 'ReactThreeFiber' : framework === 'reactylon' ? 'Reactylon' : 'React', 'WebXR', 'AI', '3D']
+        description: 'Created with m{ai}geXR - AI-powered 3D development',
+        hashtags: ['maigeXR', framework === 'react-three-fiber' ? 'ReactThreeFiber' : framework === 'reactylon' ? 'Reactylon' : 'React', 'WebXR', 'AI', '3D']
       })
       
       if (result.success) {

@@ -68,7 +68,7 @@ export class CodeSandboxService {
         code: JSON.stringify(this.getR3FDependencies(), null, 2) 
       },
       'public/index.html': {
-        code: this.getIndexHTML('XRAiAssistant R3F Scene')
+        code: this.getIndexHTML('m{ai}geXR R3F Scene')
       }
     }
 
@@ -99,7 +99,7 @@ export class CodeSandboxService {
           code: JSON.stringify(this.getReactDependencies(), null, 2)
         },
         'public/index.html': {
-          code: this.getIndexHTML('XRAiAssistant React App')
+          code: this.getIndexHTML('m{ai}geXR React App')
         }
       },
       template: 'create-react-app'
@@ -118,7 +118,7 @@ export class CodeSandboxService {
         code: JSON.stringify(this.getReactylonDependencies(), null, 2)
       },
       'public/index.html': {
-        code: this.getIndexHTML('XRAiAssistant Reactylon Scene')
+        code: this.getIndexHTML('m{ai}geXR Reactylon Scene')
       }
     }
 
@@ -320,7 +320,7 @@ root.render(<App />)`
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Generated with XRAiAssistant" />
+    <meta name="description" content="Generated with m{ai}geXR" />
     <title>${title}</title>
   </head>
   <body>
@@ -334,7 +334,7 @@ root.render(<App />)`
     return {
       name: 'xraiassistant-r3f-scene',
       version: '1.0.0',
-      description: 'React Three Fiber scene generated with XRAiAssistant',
+      description: 'React Three Fiber scene generated with m{ai}geXR',
       dependencies: {
         '@react-three/fiber': '^8.17.10',
         '@react-three/drei': '^9.109.0',
@@ -362,7 +362,7 @@ root.render(<App />)`
     return {
       name: 'xraiassistant-react-app',
       version: '1.0.0',
-      description: 'React app generated with XRAiAssistant',
+      description: 'React app generated with m{ai}geXR',
       dependencies: {
         'react': '^18.2.0',
         'react-dom': '^18.2.0'
@@ -384,7 +384,7 @@ root.render(<App />)`
     return {
       name: 'xraiassistant-reactylon-scene',
       version: '1.0.0',
-      description: 'Reactylon (React + Babylon.js) scene generated with XRAiAssistant',
+      description: 'Reactylon (React + Babylon.js) scene generated with m{ai}geXR',
       dependencies: {
         'reactylon': '^3.2.1',
         '@babylonjs/core': '^8.0.0',
@@ -418,7 +418,7 @@ root.render(<App />)`
   src="https://codesandbox.io/embed/${sandboxId}" 
   width="100%" 
   height="500px" 
-  title="XRAiAssistant Generated Scene"
+  title="m{ai}geXR Generated Scene"
   allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
   sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
 ></iframe>`
@@ -436,8 +436,8 @@ root.render(<App />)`
   }
 
   private generateSocialMessage(sandboxUrl: string, platform: string): string {
-    const baseMessage = "Check out this 3D scene I created with XRAiAssistant! 🚀"
-    const hashtags = "#XRAiAssistant #ReactThreeFiber #WebXR #AI #3D"
+    const baseMessage = "Check out this 3D scene I created with m{ai}geXR! 🚀"
+    const hashtags = "#maigeXR #ReactThreeFiber #WebXR #AI #3D"
     
     return platform === 'twitter' 
       ? `${baseMessage} ${sandboxUrl} ${hashtags}`
