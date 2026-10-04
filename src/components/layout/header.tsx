@@ -41,9 +41,14 @@ export function Header({ onOpenSettings }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center space-x-3">
-        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-sm">XR</span>
-        </div>
+        {/* Brand mascot: hooded figure with the {ai} braces as its face. */}
+        <img
+          src="/brand/maigexr-mascot.jpg"
+          alt="m{ai}geXR"
+          width={32}
+          height={32}
+          className="w-8 h-8 rounded-md object-cover"
+        />
         <div>
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
             <Wordmark />

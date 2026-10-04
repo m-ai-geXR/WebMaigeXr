@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { AppInitializer } from '@/components/app-initializer'
 import { Toaster } from 'react-hot-toast'
 import { AppConfig } from '@/lib/app-config'
+import { AppearanceEffects } from '@/components/brand/appearance'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -58,6 +59,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <AppearanceEffects />
           <AppInitializer>
             {children}
           </AppInitializer>

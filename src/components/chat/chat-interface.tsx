@@ -338,9 +338,13 @@ export function ChatInterface() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4">
-              <span className="text-white font-bold text-xl">XR</span>
-            </div>
+            <img
+              src="/brand/maigexr-mascot.jpg"
+              alt=""
+              width={64}
+              height={64}
+              className="w-16 h-16 rounded-lg object-cover mb-4"
+            />
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               Welcome to <Wordmark />
             </h2>

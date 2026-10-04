@@ -78,6 +78,8 @@ export interface AppSettings {
   effort: AIEffort
   systemPrompt: string
   theme: 'light' | 'dark' | 'system'
+  /** User stylesheet applied over the brand theme. Empty string means none. */
+  customCss: string
 }
 
 interface AppState {

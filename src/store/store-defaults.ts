@@ -744,7 +744,8 @@ export const defaultSettings: AppSettings = {
   topP: 0.9,
   effort: 'high',
   systemPrompt: '',
-  theme: 'system'
+  theme: 'system',
+  customCss: ''
 }
 
 /**

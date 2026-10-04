@@ -398,6 +398,65 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               </div>
             </section>
 
+            {/* Appearance */}
+            <section>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                Appearance
+              </h3>
+
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Theme
+                </label>
+                <div className="flex gap-2">
+                  {(['system', 'light', 'dark'] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => handleSettingChange('theme', option)}
+                      className={`flex-1 px-3 py-2 text-sm capitalize border rounded-lg transition-colors ${
+                        localSettings.theme === option
+                          ? 'border-transparent text-white'
+                          : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                      style={
+                        localSettings.theme === option
+                          ? { backgroundColor: 'var(--brand-accent)' }
+                          : undefined
+                      }
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  System follows your operating system setting.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Custom CSS (Optional)
+                </label>
+                <textarea
+                  value={localSettings.customCss}
+                  onChange={(e) => handleSettingChange('customCss', e.target.value)}
+                  placeholder={':root {\n  --brand-accent: #2050e0;\n}'}
+                  rows={6}
+                  spellCheck={false}
+                  className="w-full p-3 font-mono text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Applied last, so it overrides the brand theme. Override the
+                  tokens rather than individual rules where you can:{' '}
+                  <code className="font-mono">--brand-accent</code>,{' '}
+                  <code className="font-mono">--brand-bg</code>,{' '}
+                  <code className="font-mono">--brand-surface</code>,{' '}
+                  <code className="font-mono">--brand-text</code>.
+                </p>
+              </div>
+            </section>
+
             {/* System Prompt */}
             <section>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
