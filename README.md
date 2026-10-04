@@ -310,6 +310,8 @@ WebMaigeXr/
 - [docs/CHAT_MARKDOWN_RENDERING.md](docs/CHAT_MARKDOWN_RENDERING.md) — how a
   markdown line becomes a chat bubble on all three clients, and the layout trap
   that broke wrapping on iOS and Web
+- [docs/NOVA64_UPSTREAM_ISSUES.md](docs/NOVA64_UPSTREAM_ISSUES.md) — bugs in the
+  nova64 package itself, verified against 0.5.3, written up for fixing upstream
 
 ---
 

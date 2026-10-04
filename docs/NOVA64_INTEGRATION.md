@@ -214,8 +214,10 @@ rather than a palette index or a 3D hex value.
 
 ## 9. Known rough edges
 
-- The `dist/` inside the npm tarball is internally inconsistent:
+- ~~The `dist/` inside the npm tarball is internally inconsistent:
   `dist/cart-runner.html` references an `assets/main-*.js` filename that the
-  tarball does not contain. Only relevant if someone revisits vendoring.
+  tarball does not contain.~~ Fixed in 0.5.3: the referenced asset ships. See
+  [NOVA64_UPSTREAM_ISSUES.md](NOVA64_UPSTREAM_ISSUES.md) for the issues that do
+  still reproduce.
 - `hero-embed` appends `demo=hero-demo` to the URL when absent. Harmless:
   studio mode returns before any cart path is resolved.
