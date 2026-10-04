@@ -35,7 +35,7 @@ export function BottomNavigation() {
   ]
 
   return (
-    <nav className="flex bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+    <nav className="flex bg-brand-bg border-t border-brand-divider">
       {tabs.map((tab) => {
         const Icon = tab.icon
         const isActive = currentView === tab.id
@@ -45,17 +45,17 @@ export function BottomNavigation() {
             key={tab.id}
             onClick={() => setCurrentView(tab.id)}
             className={cn(
-              "flex-1 flex flex-col items-center justify-center px-3 py-3 transition-colors",
+              // Active state is a 2px accent rule along the top edge rather than
+              // a tinted panel, so the bar stays one flat surface.
+              "relative flex-1 flex flex-col items-center justify-center px-3 py-3 transition-colors",
+              "before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:transition-colors",
               isActive
-                ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                ? "text-brand-text before:bg-brand-accent"
+                : "text-brand-muted hover:text-brand-text before:bg-transparent"
             )}
           >
-            <Icon size={20} className="mb-1" />
-            <span className="text-xs font-medium">{tab.label}</span>
-            <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-              {tab.description}
-            </span>
+            <Icon size={18} className="mb-1.5" />
+            <span className="text-[11px] font-semibold tracking-label uppercase">{tab.label}</span>
           </button>
         )
       })}

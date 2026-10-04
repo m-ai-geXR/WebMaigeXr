@@ -232,13 +232,13 @@ export function ChatInterface() {
   return (
     <div className="flex flex-col h-full">
       {/* Header with dropdowns */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="flex items-center justify-between px-5 py-2.5 border-b border-brand-divider bg-brand-bg">
         <div className="flex items-center space-x-3">
           {/* Library Dropdown */}
           <div className="relative" ref={libraryDropdownRef}>
             <button
               onClick={() => setShowLibraryDropdown(!showLibraryDropdown)}
-              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+              className="flex items-center space-x-2 px-3 py-1.5 border border-brand-divider hover:bg-brand-surface transition-colors text-sm font-medium text-brand-text"
             >
               <Code size={16} />
               <span>{currentLibrary?.name || 'Select Library'}</span>
@@ -246,7 +246,7 @@ export function ChatInterface() {
             </button>
 
             {showLibraryDropdown && (
-              <div className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1 w-56 bg-brand-bg border border-brand-divider shadow-lg z-50 max-h-80 overflow-y-auto">
                 <div className="py-1">
                   {libraries.map((library) => (
                     <button
@@ -273,7 +273,7 @@ export function ChatInterface() {
           <div className="relative" ref={modelDropdownRef}>
             <button
               onClick={() => setShowModelDropdown(!showModelDropdown)}
-              className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 hover:from-purple-200 hover:to-blue-200 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+              className="flex items-center space-x-2 px-3 py-1.5 border border-brand-divider hover:bg-brand-surface transition-colors text-sm font-medium text-brand-text"
             >
               <Sparkles size={16} />
               <span>{currentModel?.name || 'Select Model'}</span>
@@ -281,7 +281,7 @@ export function ChatInterface() {
             </button>
 
             {showModelDropdown && (
-              <div className="absolute top-full left-0 mt-1 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1 w-72 bg-brand-bg border border-brand-divider shadow-lg z-50 max-h-96 overflow-y-auto">
                 <div className="py-1">
                   {providers.map((provider) => (
                     <div key={provider.id}>
@@ -319,7 +319,7 @@ export function ChatInterface() {
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowExamples(true)}
-            className="flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-200 hover:to-emerald-200 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+            className="flex items-center space-x-1 px-3 py-1.5 border border-brand-divider hover:bg-brand-surface transition-colors text-sm font-medium text-brand-text"
           >
             <BookOpen size={14} />
             <span>Examples</span>
@@ -343,19 +343,19 @@ export function ChatInterface() {
               alt=""
               width={64}
               height={64}
-              className="w-16 h-16 rounded-lg object-cover mb-4"
+              className="w-16 h-16 object-cover mb-5"
             />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <h2 className="font-heading text-3xl font-extrabold tracking-heading text-brand-text mb-3">
               Welcome to <Wordmark />
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+            <p className="text-brand-muted mb-8 max-w-md leading-relaxed">
               Start creating amazing 3D experiences with AI assistance. 
               Ask me to create scenes, explain concepts, or help with debugging.
             </p>
             
             {currentLibrary && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 max-w-md">
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+              <div className="border-l-2 border-brand-accent bg-brand-surface px-5 py-4 max-w-md text-left">
+                <h3 className="brand-label mb-1.5 !text-brand-accent">
                   Current Library: {currentLibrary.name} v{currentLibrary.version}
                 </h3>
                 <p className="text-sm text-blue-700 dark:text-blue-200">
@@ -390,7 +390,7 @@ export function ChatInterface() {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="px-5 py-4 border-t border-brand-divider">
         <form onSubmit={handleSubmit} className="flex items-end space-x-3">
           <div className="flex-1 relative">
             <textarea
@@ -399,7 +399,7 @@ export function ChatInterface() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={`Ask me to create a 3D scene with ${currentLibrary?.name || '3D library'}...`}
-              className="w-full p-3 pr-12 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-3 pr-12 border border-brand-divider bg-brand-bg text-brand-text placeholder:text-brand-muted resize-none focus:outline-none focus:border-brand-accent transition-colors"
               rows={Math.min(Math.max(input.split('\n').length, 1), 4)}
               disabled={isLoading}
             />
@@ -416,7 +416,7 @@ export function ChatInterface() {
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-3 bg-brand-accent text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
           >
             {isLoading ? (
               <Loader2 size={20} className="animate-spin" />
