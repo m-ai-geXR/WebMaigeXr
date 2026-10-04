@@ -9,6 +9,7 @@ import { ChatMessage } from './chat-message'
 import { ExamplesModal } from '../examples/examples-modal'
 import toast from 'react-hot-toast'
 import { Wordmark } from '@/components/brand/wordmark'
+import { classifyAIError, formatAIErrorLine, formatAIErrorMessage } from '@/lib/ai-errors'
 
 export function ChatInterface() {
   const {
@@ -172,15 +173,17 @@ export function ChatInterface() {
       }
 
     } catch (error) {
+      // Full detail to the console for debugging; the user gets the classified
+      // message, never a raw provider body.
       console.error('AI API Error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      
+      const info = classifyAIError(error, provider?.name)
+
       addMessage({
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${errorMessage}\n\nPlease check your API key and try again.`
+        content: formatAIErrorMessage(info)
       })
-      
-      toast.error(`AI Error: ${errorMessage}`)
+
+      toast.error(formatAIErrorLine(info))
     } finally {
       setLoading(false)
     }

@@ -1,6 +1,7 @@
 import { useAppStore } from '@/store/app-store'
 import type { AIModelControl, AIEffort } from '@/store/app-store'
 import { defaultProviders } from '@/store/store-defaults'
+import { AIProviderError } from './ai-errors'
 
 export interface AIResponse {
   content: string
@@ -190,7 +191,7 @@ export class AIService {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Together AI API error: ${response.status} - ${error}`)
+      throw new AIProviderError('Together AI', response.status, error)
     }
 
     const data = await response.json()
@@ -239,12 +240,12 @@ export class AIService {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Together AI API error: ${response.status} - ${error}`)
+      throw new AIProviderError('Together AI', response.status, error)
     }
 
     const reader = response.body?.getReader()
     if (!reader) {
-      throw new Error('No response body reader available')
+      throw new AIProviderError('The AI provider', undefined, 'no response body')
     }
 
     const decoder = new TextDecoder()
@@ -329,7 +330,7 @@ export class AIService {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`OpenAI API error: ${response.status} - ${error}`)
+      throw new AIProviderError('OpenAI', response.status, error)
     }
 
     const data = await response.json()
@@ -389,11 +390,11 @@ export class AIService {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`OpenAI API error: ${response.status} - ${error}`)
+      throw new AIProviderError('OpenAI', response.status, error)
     }
 
     const reader = response.body?.getReader()
-    if (!reader) throw new Error('No response body reader available')
+    if (!reader) throw new AIProviderError('The AI provider', undefined, 'no response body')
 
     const decoder = new TextDecoder()
     let buffer = ''
@@ -462,7 +463,7 @@ export class AIService {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Anthropic API error: ${response.status} - ${error}`)
+      throw new AIProviderError('Anthropic', response.status, error)
     }
 
     const data = await response.json()
@@ -510,11 +511,11 @@ export class AIService {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Anthropic API error: ${response.status} - ${error}`)
+      throw new AIProviderError('Anthropic', response.status, error)
     }
 
     const reader = response.body?.getReader()
-    if (!reader) throw new Error('No response body reader available')
+    if (!reader) throw new AIProviderError('The AI provider', undefined, 'no response body')
 
     const decoder = new TextDecoder()
     let buffer = ''
@@ -596,7 +597,7 @@ export class AIService {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Google AI API error: ${response.status} - ${error}`)
+      throw new AIProviderError('Google AI', response.status, error)
     }
 
     const data = await response.json()
@@ -667,12 +668,12 @@ export class AIService {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Google AI API error: ${response.status} - ${error}`)
+      throw new AIProviderError('Google AI', response.status, error)
     }
 
     const reader = response.body?.getReader()
     if (!reader) {
-      throw new Error('No response body reader available')
+      throw new AIProviderError('The AI provider', undefined, 'no response body')
     }
 
     const decoder = new TextDecoder()
