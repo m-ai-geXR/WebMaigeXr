@@ -7,6 +7,7 @@ import { cryptoService, type EncryptedData, type DecryptedApiKeys } from '@/lib/
 import { dbService } from '@/lib/db-service'
 import toast from 'react-hot-toast'
 import { Wordmark } from '@/components/brand/wordmark'
+import { classifyStartupError } from '@/lib/scene-errors'
 
 interface AppInitializerProps {
   children: React.ReactNode
@@ -142,30 +143,33 @@ export function AppInitializer({ children }: AppInitializerProps) {
 
   // Initialization failed — surface it instead of rendering a broken app
   if (initError) {
+    // Classified so the advice matches the failure. A missing wasm binary and
+    // storage blocked in a private window both land here, and need different
+    // things done about them.
+    const info = classifyStartupError(initError)
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-        <div className="max-w-xl w-full bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Could not start maigeXR
+      <div className="flex items-center justify-center min-h-screen bg-brand-bg p-6">
+        <div className="max-w-xl w-full bg-brand-surface border border-brand-divider p-6">
+          <h1 className="font-heading text-xl font-extrabold tracking-heading text-brand-text mb-2">
+            {info.title}
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-            The local database failed to initialize, so settings and conversations
-            cannot be saved. The app is not usable in this state.
+          <p className="text-sm text-brand-muted mb-4">
+            {info.message}
           </p>
 
-          <pre className="text-xs bg-gray-100 dark:bg-gray-900 text-red-600 dark:text-red-400 rounded p-3 mb-4 overflow-x-auto whitespace-pre-wrap">
-            {initError}
-          </pre>
-
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-            The usual cause is a missing sql.js WebAssembly file. From the project
-            directory run <code className="font-mono text-xs bg-gray-100 dark:bg-gray-900 px-1 py-0.5 rounded">pnpm run sql-wasm</code>,
-            then reload.
+          <p className="text-sm text-brand-text mb-4">
+            {info.action}
           </p>
+
+          {info.detail && (
+            <pre className="text-xs bg-brand-bg border border-brand-divider text-brand-muted p-3 mb-4 overflow-x-auto whitespace-pre-wrap">
+              {info.detail}
+            </pre>
+          )}
 
           <button
             onClick={() => initializeApp()}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-brand-accent hover:opacity-90 text-white text-sm font-medium transition-opacity"
           >
             Retry
           </button>
