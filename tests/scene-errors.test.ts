@@ -131,3 +131,81 @@ describe('guarantees across every classifier', () => {
     expect(formatSceneError(info)).not.toContain('something very specific')
   })
 })
+
+// ---------------------------------------------------------------------------
+// Parity with the mobile playgrounds.
+//
+// The iOS and Android Nova64 pages carry their own copy of this logic, in plain
+// ES5 inside the HTML, because they cannot import from here. Copies drift, so
+// the copy is executed and checked against the same cases.
+// ---------------------------------------------------------------------------
+
+import fs from 'fs'
+import path from 'path'
+
+const mobilePlaygrounds = [
+  '../iOSMaigeXr/XRAiAssistant/Resources/playground-nova64.html',
+  '../AndroidMaigeXr/app/src/main/assets/playground-nova64.html',
+].map((p) => path.resolve(__dirname, '..', p))
+
+const present = mobilePlaygrounds.filter((p) => fs.existsSync(p))
+
+/** Pull the page's classifier out of the HTML and make it callable. */
+function loadMobileClassifier(file: string): (raw: unknown) => { title: string; body: string; detail: string } {
+  const html = fs.readFileSync(file, 'utf8')
+  const start = html.indexOf('function classifyCartError(')
+  if (start === -1) throw new Error(`no classifyCartError in ${file}`)
+  // Up to the helper that follows it.
+  const end = html.indexOf('function showCartError(', start)
+  const source = html.slice(start, end)
+  // eslint-disable-next-line no-new-func
+  return new Function(`${source}; return classifyCartError;`)() as any
+}
+
+describe.skipIf(present.length === 0)('mobile playground cart classifier parity', () => {
+  it.each(present)('%s classifies the export trap', (file) => {
+    const classify = loadMobileClassifier(file)
+    const info = classify("SyntaxError: Unexpected token 'export'")
+    expect(info.title).toBe('Carts cannot use export')
+    expect(info.body).toContain('function init()')
+  })
+
+  it.each(present)('%s names the namespaced form for a bare global', (file) => {
+    const classify = loadMobileClassifier(file)
+    const info = classify('ReferenceError: createCube is not defined')
+    expect(info.title).toContain('createCube')
+    expect(info.body).toContain('nova64.scene.createCube')
+  })
+
+  it.each(present)('%s separates a missing runtime from a bare global', (file) => {
+    const classify = loadMobileClassifier(file)
+    expect(classify('ReferenceError: nova64 is not defined').title).toBe('Console did not load')
+  })
+
+  it.each(present)('%s agrees with the desktop classifier on category', (file) => {
+    const classify = loadMobileClassifier(file)
+    const cases = [
+      ["SyntaxError: Unexpected token 'export'", 'cart-uses-export'],
+      ['ReferenceError: createCube is not defined', 'cart-bare-global'],
+      ['ReferenceError: nova64 is not defined', 'cart-runtime-missing'],
+      ['SyntaxError: Unexpected end of input', 'cart-syntax'],
+      ['TypeError: mesh.rotate is not a function', 'cart-runtime'],
+    ] as const
+
+    for (const [raw, expectedCategory] of cases) {
+      const desktop = classifyCartError(raw)
+      expect(desktop.category).toBe(expectedCategory)
+      // Same bucket on both: the mobile copy has no category field, so the
+      // title is the observable proxy for agreement.
+      expect(classify(raw).title).toBe(desktop.title)
+    }
+  })
+
+  it.each(present)('%s keeps the engine message as detail and survives odd input', (file) => {
+    const classify = loadMobileClassifier(file)
+    expect(classify('TypeError: boom').detail).toBe('TypeError: boom')
+    expect(() => classify(null)).not.toThrow()
+    expect(() => classify(undefined)).not.toThrow()
+    expect(classify('').detail).toBe('')
+  })
+})
