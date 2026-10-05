@@ -300,7 +300,7 @@ function generateNova64Export(code: string, includeReadme: boolean): { files: Re
     private: true,
     type: 'module',
     dependencies: {
-      nova64: '^0.5.2'
+      nova64: '^0.5.6'
     },
     scripts: {
       dev: 'nova64 dev',

@@ -1,7 +1,29 @@
 <!--
-Ready to file at https://github.com/seacloud9/nova64/issues
-Title is the first line; everything below the rule is the issue body.
+DO NOT FILE. Fixed upstream in nova64 0.5.6, released 2026-10-05, before this
+was ever submitted. Kept as the record of what was wrong and how it was
+verified; see the RESOLVED note below.
 -->
+
+> **RESOLVED in nova64 0.5.6 — do not file this.**
+>
+> Everything below describes 0.5.3 and no longer reproduces. Verified by running
+> the published 0.5.6 executor:
+>
+> - `export function init()` and `export { init, update, draw }` both run.
+>   `createStudioCartFunction` tries the original source first and only strips
+>   exports after a `SyntaxError`, so a cart that already worked cannot change
+>   behaviour.
+> - The README example is now fully namespaced (`nova64.scene.createCube`,
+>   `nova64.draw.print`) and documents the script shape as the default, with a
+>   separate CLI section.
+> - Bare `print` no longer opens the print dialog: the studio host redirects
+>   `globalThis.print` to `console.log` (`src/main.js:691`), and that redirect
+>   ships in the `hero-embed` bundle we load.
+> - The error for genuinely broken carts is now self-answering, e.g.
+>   *"Invalid Studio cart syntax: … Studio executes scripts: declare function
+>   init(), update(dt), and draw() without import or export."*
+> - `import` is still rejected, deliberately and with an explanation.
+
 
 # README's first cart example cannot run in studio mode
 

@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { defaultLibraries } from '@/store/store-defaults'
 import { buildNova64RunnerUrl, getNova64RunnerOrigin } from '@/lib/nova64-runner'
+import { NOVA64_VERSION } from '../src/lib/nova64-runner'
 
 /**
  * Invariants for the Nova64 integration. Each of these encodes a mistake that
@@ -18,7 +19,9 @@ describe('Nova64 library definition', () => {
   it('is registered as a 3D library', () => {
     expect(nova64, 'nova64 should be in defaultLibraries').toBeTruthy()
     expect(nova64!.name).toBe('Nova64')
-    expect(nova64!.version).toBe('0.5.2')
+    // Asserted against the shared constant rather than a literal, so bumping
+    // nova64 is one edit and the library entry cannot drift from the runner.
+    expect(nova64!.version).toBe(NOVA64_VERSION)
   })
 
   it('loads no CDN script of its own — the console boots itself', () => {

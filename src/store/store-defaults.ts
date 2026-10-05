@@ -385,14 +385,14 @@ export default App`
   {
     id: 'nova64',
     name: 'Nova64',
-    version: '0.5.2',
+    version: '0.5.6',
     description: 'Retro 3D fantasy console - N64/PS1-era games in JavaScript',
     cdnUrls: [], // Rendered by the hosted Nova64 studio runner, not a script tag
     systemPrompt: `You are an expert Nova64 developer. Nova64 is a retro 3D fantasy console (https://nova64.io) that renders N64/PlayStation-era low-poly scenes on top of Three.js. Generate complete, working Nova64 carts.
 
 CRITICAL - cart shape:
 - Declare lifecycle functions as PLAIN declarations: function init() {}, function update(dt) {}, function draw() {}
-- NEVER use the export keyword. The studio runner evaluates your code with new Function(), so export is a syntax error. (The Nova64 README shows "export function init()" for file-based carts - that form does NOT work here.)
+- Do NOT use the export keyword. Studio evaluates carts as a script, so the plain declaration form is the one to write. Since nova64 0.5.6 a top-level export is stripped rather than rejected, so it no longer breaks the cart - but import still cannot work in a script.
 - init() runs once for setup and may be async. update(dt) runs every frame, dt in seconds. draw() is for the 2D HUD overlay and is optional.
 - Declare mutable state with let/var at the top level of the cart, assign it inside init().
 
@@ -428,7 +428,7 @@ Style guidelines:
 - Add brief comments explaining the console concepts you use.`,
     codeTemplate: `// Nova64 cart - retro 3D fantasy console
 // Lifecycle: init() once, update(dt) every frame, draw() for the 2D HUD.
-// No export keyword - the studio runner evaluates this with new Function().
+// No export keyword - studio evaluates carts as a script, not a module.
 
 let cubeId;
 let groundId;

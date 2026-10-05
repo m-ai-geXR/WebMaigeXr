@@ -3,14 +3,26 @@
 Issues in the `nova64` package itself, written up so they can be fixed in the
 Nova64 workspace rather than worked around again in m{ai}geXR.
 
-**Verified against `nova64@0.5.3`** (current `latest` on npm, 2026-10-04), by
+**Status:** every issue recorded here has since been fixed upstream. The project
+now uses `nova64@0.5.6`. Kept as a record of what was wrong, how it was
+verified, and what our integration no longer needs to work around.
+
+Originally verified against `nova64@0.5.3` (then `latest`, 2026-10-04) by
 reading the published tarball: `npm pack nova64@0.5.3`.
 
 All file references below are paths inside that tarball.
 
 ---
 
-## 1. The README's cart example cannot run in studio mode
+## 1. The README's cart example cannot run in studio mode — FIXED in 0.5.6
+
+> **Resolved upstream.** Fixed in `nova64@0.5.6` (2026-10-05), before the issue
+> was filed. `createStudioCartFunction` now strips top-level exports after a
+> `SyntaxError` and reports a self-answering message otherwise; the README
+> example is namespaced and documents the script shape; and the studio host
+> redirects bare `print` to `console.log`. Verified by running the published
+> 0.5.6 executor. The description below is kept for the record and describes
+> 0.5.3.
 
 > Written up as a standalone issue ready to file at
 > <https://github.com/seacloud9/nova64/issues>:
