@@ -1,5 +1,12 @@
 // NOVA64 TEMPLATE: fp-dungeon-wizardry
 // ============================== CONFIG ==============================
+// Chat words that pick this template. Edit them to change when it is used:
+// a game word picks the kind of game, a style word picks this look over the others.
+const KEYWORDS = {
+  game: ['dungeon', 'crawler', 'rpg', 'wizardry', 'labyrinth', 'maze'],
+  style: ['stone', 'torch', 'cave', 'cavern', 'crypt', 'tomb', 'mine', 'lava', 'medieval', 'castle', 'forest', 'corridor', 'ice', 'frost', 'crystal', 'fantasy']
+};
+
 const THEME = {
   wallStyle: 'stone', // 'stone' = torchlit stone, 'grid' = neon edge strips
   wall: 0x6a5848,

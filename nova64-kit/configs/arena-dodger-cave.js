@@ -1,5 +1,12 @@
 // NOVA64 TEMPLATE: arena-dodger-cave
 // ============================== CONFIG ==============================
+// Chat words that pick this template. Edit them to change when it is used:
+// a game word picks the kind of game, a style word picks this look over the others.
+const KEYWORDS = {
+  game: ['arena', 'dodge', 'dodging', 'bullet hell', 'top-down', 'survive waves', 'waves of'],
+  style: ['cave', 'stone', 'torch', 'cavern', 'crypt', 'tomb', 'mine', 'lava', 'medieval', 'castle', 'forest', 'corridor', 'ice', 'frost', 'crystal', 'fantasy']
+};
+
 const THEME = {
   arenaStyle: 'cave', // 'cave' = crystal cavern, 'neon' = glowing ring grid
   floor: 0x1a1428,

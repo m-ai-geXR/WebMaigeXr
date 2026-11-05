@@ -7,6 +7,7 @@ import { AIService } from '@/lib/ai-service'
 import { extractCodeFromMessage, copyToClipboard, downloadTextFile } from '@/lib/utils'
 import { ChatMessage } from './chat-message'
 import { ExamplesModal } from '../examples/examples-modal'
+import { Nova64TemplateChips } from './nova64-template-chips'
 import toast from 'react-hot-toast'
 import { Wordmark } from '@/components/brand/wordmark'
 import { classifyAIError, formatAIErrorLine, formatAIErrorMessage } from '@/lib/ai-errors'
@@ -126,6 +127,8 @@ export function ChatInterface() {
     try {
       // Build enhanced prompt with library context
       let enhancedPrompt = userMessage
+      // Nova64 games: the template the user's words picked, if any.
+      let gameTemplate: ReturnType<typeof nova64TemplateRequest> = null
       
       if (library) {
         enhancedPrompt = `${library.systemPrompt}\n\nUser request: ${userMessage}`
@@ -135,7 +138,7 @@ export function ChatInterface() {
         enhancedPrompt += `\nDescription: ${library.description}`
         
         // Nova64 games: customise a tested engine's CONFIG instead of writing a whole cart.
-        const gameTemplate = library.id === 'nova64'
+        gameTemplate = library.id === 'nova64'
           ? nova64TemplateRequest(userMessage, useAppStore.getState().currentCode)
           : null
 
@@ -156,7 +159,8 @@ export function ChatInterface() {
         hasCode: false
       })
 
-      let streamedContent = ''
+      // A template reply opens with which template the user's words picked.
+      let streamedContent = gameTemplate?.note ? `${gameTemplate.note}\n\n` : ''
       
       await aiService.generateStreamingResponse(enhancedPrompt, {
         provider: provider.id,
@@ -388,6 +392,9 @@ export function ChatInterface() {
                 <p className="text-sm text-blue-700 dark:text-blue-200">
                   {currentLibrary.description}
                 </p>
+                {currentLibrary.id === 'nova64' && (
+                  <Nova64TemplateChips title="Game templates: say one of these words, or tap to preview" />
+                )}
               </div>
             )}
           </div>

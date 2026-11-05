@@ -154,8 +154,8 @@ describe('the starter template lays its floor flat', () => {
 
 describe('mobile playground pages use the kit', () => {
   const pages = [
-    ['iOS', path.join(maige, 'iOSMaigeXr/XRAiAssistant/Resources/playground-nova64.html')],
-    ['Android', path.join(maige, 'AndroidMaigeXr/app/src/main/assets/playground-nova64.html')]
+    ['iOS', path.join(process.env.NOVA64_KIT_IOS ?? path.join(maige, 'iOSMaigeXr'), 'XRAiAssistant/Resources/playground-nova64.html')],
+    ['Android', path.join(process.env.NOVA64_KIT_ANDROID ?? path.join(maige, 'AndroidMaigeXr'), 'app/src/main/assets/playground-nova64.html')]
   ] as const
   for (const [label, file] of pages) {
     const present = fs.existsSync(file)
@@ -165,4 +165,44 @@ describe('mobile playground pages use the kit', () => {
       expect(html).toMatch(/codeString = prepareNova64Cart\(codeString\);/)
     })
   }
+})
+
+describe('template keywords', () => {
+  it('every template lists game and style words in its CONFIG', () => {
+    for (const t of nova64Kit.templates()) {
+      expect(t.keywords.game.length, t.id).toBeGreaterThan(0)
+      expect(t.keywords.style.length, t.id).toBeGreaterThan(0)
+      expect(t.config, t.id).toMatch(/^const KEYWORDS = \{/m)
+    }
+  })
+
+  it('matches a keyword at the start of a word, not inside one', () => {
+    expect(nova64Kit.pickTemplate('a firefly dodges spiders in an arena').words).toContain('dodge')
+    expect(nova64Kit.chooseTemplate('a pirate ship that drains the harbour')).toBeNull()
+  })
+
+  it('reports the words that picked a template, and says so in the chat note', () => {
+    const pick = nova64Kit.pickTemplate('Make a dungeon crawler about four monks in a flooded abbey')
+    expect(pick).toEqual({ id: 'fp-dungeon-wizardry', words: ['dungeon', 'crawler'] })
+    const note = nova64Kit.templateNote(pick)
+    expect(note).toContain('**Dungeon crawler · Torchlit stone**')
+    expect(note).toContain('*dungeon*, *crawler*')
+    expect(note).toContain('*from scratch*')
+  })
+
+  it('a follow-up edit keeps the template and adds no note', () => {
+    const pick = nova64Kit.pickTemplate('make the enemies faster', '// NOVA64 TEMPLATE: lane-runner-grid\n')
+    expect(pick.id).toBe('lane-runner-grid')
+    expect(nova64Kit.templateNote(pick)).toBe('')
+  })
+
+  it('labels each chip with its first game word and first style word', () => {
+    expect(nova64Kit.templates().map((t) => nova64Kit.chipLabel(t))).toEqual([
+      'dungeon · stone', 'dungeon · neon', 'runner · neon', 'runner · torch', 'arena · neon', 'arena · cave'
+    ])
+  })
+
+  it('tells the model to keep KEYWORDS as they are', () => {
+    expect(nova64Kit.templatePrompt('arena-dodger-neon')).toContain('Keep KEYWORDS exactly as it is.')
+  })
 })

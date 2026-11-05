@@ -23,23 +23,12 @@
   var ENGINE_MARK = '// ============================== ENGINE ==============================';
   var TEMPLATE_RE = /\/\/\s*NOVA64 TEMPLATE:\s*([a-z0-9-]+)/;
 
-  // Template picking. Mirrored exactly in Swift (Nova64Templates.swift) and
-  // Kotlin (Nova64Templates.kt); the generated test vectors keep them in step.
+  // Template picking. Each template's CONFIG lists the chat words that pick it
+  // (KEYWORDS: game words pick the kind of game, style words pick the look).
+  // Mirrored exactly in Swift (Nova64Templates.swift) and Kotlin
+  // (Nova64Templates.kt); the generated test vectors keep them in step.
   var OPT_OUT_RE = /\b(from scratch|free-?form|without (a |the )?template|no template|custom engine)\b/;
   var NEW_THING_RE = /\b(new|another|different)\b.*\b(scene|game|cart|demo)\b/;
-  var FAMILY_RES = [
-    ['dungeon', /\b(dungeons?|crawlers?|rpg|wizardry|labyrinths?|mazes?|dungeon-crawler)\b/],
-    ['runner', /\b(runners?|endless run\w*|lanes?|subway|temple run)\b/],
-    ['arena', /\b(arenas?|dodgers?|dodging|dodge|bullet hell|top-down|survive waves|waves of)\b/]
-  ];
-  var NEON_RE = /\b(neon|cyber\w*|synth\w*|grid|digital|hacker|tron|data|electric|vapor\w*|laser|sci-?fi|space|holo\w*)\b/;
-  var CLASSIC_RE = /\b(stone|torch\w*|caves?|cavern|crypts?|tomb|mines?|lava|medieval|castle|forest|corridor|ice|frost|crystal|fantasy)\b/;
-  var VARIANTS = {
-    dungeon: { neon: 'fp-dungeon-odyssey', classic: 'fp-dungeon-wizardry' },
-    runner: { neon: 'lane-runner-grid', classic: 'lane-runner-corridor' },
-    arena: { neon: 'arena-dodger-neon', classic: 'arena-dodger-cave' }
-  };
-  var DEFAULT_STYLE = { dungeon: 'classic', runner: 'neon', arena: 'neon' };
 
   function templates() { return DATA ? DATA.templates : []; }
   function getTemplate(id) {
@@ -52,24 +41,68 @@
     return m && getTemplate(m[1]) ? m[1] : null;
   }
 
-  /** Which template a chat request should use, or null for free-form generation. */
-  function chooseTemplate(message, currentCode) {
+  /** True when `word` starts a word in the lower-cased message ("dodge" matches "dodges"). */
+  function hasWord(message, word) {
+    var i = message.indexOf(word);
+    while (i >= 0) {
+      if (i === 0 || !/[a-z0-9]/.test(message[i - 1])) return true;
+      i = message.indexOf(word, i + 1);
+    }
+    return false;
+  }
+  function matches(message, words) {
+    return (words || []).filter(function (w) { return hasWord(message, w); });
+  }
+
+  /**
+   * Which template a chat request should use, and why:
+   * { id, words } where words are the keywords that matched, or { id: null }.
+   */
+  function pickTemplate(message, currentCode) {
     var m = String(message || '').toLowerCase();
     var current = templateIdOf(currentCode);
-    if (OPT_OUT_RE.test(m)) return null;
-    var family = null;
-    for (var i = 0; i < FAMILY_RES.length; i++) {
-      if (FAMILY_RES[i][1].test(m)) { family = FAMILY_RES[i][0]; break; }
+    if (OPT_OUT_RE.test(m)) return { id: null, words: [] };
+    var list = templates(), best = null, bestGame = [];
+    for (var i = 0; i < list.length; i++) {
+      var g = matches(m, list[i].keywords.game);
+      if (g.length > bestGame.length) { best = list[i]; bestGame = g; }
     }
-    if (!family) {
-      if (current && !NEW_THING_RE.test(m)) return current;   // follow-up edit
-      return null;
+    if (!best) {
+      if (current && !NEW_THING_RE.test(m)) return { id: current, words: [], followUp: true };
+      return { id: null, words: [] };
     }
-    var neon = NEON_RE.test(m), classic = CLASSIC_RE.test(m);
+    var pick = null, pickStyle = [];
+    for (var j = 0; j < list.length; j++) {
+      if (list[j].family !== best.family) continue;
+      var st = matches(m, list[j].keywords.style);
+      if (!pick || st.length > pickStyle.length) { pick = list[j]; pickStyle = st; }
+    }
     var cur = current ? getTemplate(current) : null;
-    if (cur && cur.family === family && !neon && !classic) return current;
-    var style = neon && !classic ? 'neon' : classic && !neon ? 'classic' : DEFAULT_STYLE[family];
-    return VARIANTS[family][style];
+    if (!pickStyle.length && cur && cur.family === best.family) pick = cur;
+    return { id: pick.id, words: bestGame.concat(pickStyle) };
+  }
+
+  /** A template's chip label in chat: its first game word and first style word. */
+  function chipLabel(t) {
+    return t.keywords.game[0] + ' \u00b7 ' + t.keywords.style[0];
+  }
+
+  /**
+   * The line that opens a template reply in chat, telling the user which template
+   * their words picked and how to opt out. '' for follow-ups and free-form.
+   * Platforms show it verbatim, so keep it plain markdown (bold and italics only).
+   */
+  function templateNote(pick) {
+    var t = pick && pick.id ? getTemplate(pick.id) : null;
+    if (!t || !pick.words || !pick.words.length) return '';
+    return '\ud83c\udfae Started from the **' + t.genre + ' \u00b7 ' + t.style + '** template, because you said ' +
+      pick.words.map(function (w) { return '*' + w + '*'; }).join(', ') +
+      '. Tap a template below to preview it, or say *from scratch* to write your own.';
+  }
+
+  /** Which template a chat request should use, or null for free-form generation. */
+  function chooseTemplate(message, currentCode) {
+    return pickTemplate(message, currentCode).id;
   }
 
   /** The CONFIG section of a cart, starting at its NOVA64 TEMPLATE line. */
@@ -371,6 +404,9 @@
     getTemplate: getTemplate,
     templateIdOf: templateIdOf,
     chooseTemplate: chooseTemplate,
+    pickTemplate: pickTemplate,
+    templateNote: templateNote,
+    chipLabel: chipLabel,
     configOf: configOf,
     templatePrompt: templatePrompt,
     prepare: prepare,

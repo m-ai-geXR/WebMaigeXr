@@ -1,5 +1,12 @@
 // NOVA64 TEMPLATE: fp-dungeon-odyssey
 // ============================== CONFIG ==============================
+// Chat words that pick this template. Edit them to change when it is used:
+// a game word picks the kind of game, a style word picks this look over the others.
+const KEYWORDS = {
+  game: ['dungeon', 'crawler', 'rpg', 'wizardry', 'labyrinth', 'maze'],
+  style: ['neon', 'cyber', 'synth', 'grid', 'digital', 'hacker', 'tron', 'data', 'electric', 'vapor', 'laser', 'sci-fi', 'scifi', 'space', 'holo']
+};
+
 const THEME = {
   wallStyle: 'grid', // 'stone' = torchlit stone, 'grid' = neon edge strips
   wall: 0x0c1430,

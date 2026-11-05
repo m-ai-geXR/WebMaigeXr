@@ -162,7 +162,21 @@ const col = (c, a = 255) => rgba8(c[0], c[1], c[2], a);
 const smooth = t => t * t * (3 - 2 * t);
 const cellAt = (c, r) => (MAP[r] && MAP[r][c]) || '#';
 const isWall = (c, r) => cellAt(c, r) === '#';
-const fitScale = (text, max) => Math.max(1, Math.min(max, Math.floor(600 / (text.length * 6))));
+const fitScale = (text, max) => Math.max(1, Math.min(max, Math.floor((SW - 40) / (text.length * 6))));
+
+// Screen layout. The runner is sized to the host pane (a wide desktop pane or a
+// phone in portrait), so the 2D layer is laid out from the real screen size every
+// frame instead of a fixed 640x360. Centred screens keep their 640x360 design,
+// shifted down by MY and narrowed with fitW() when the screen is smaller.
+let SW = 640, SH = 360, CX = 320, MY = 0, TS = 2;
+function layout() {
+  SW = screenWidth();
+  SH = screenHeight();
+  CX = Math.floor(SW / 2);
+  MY = Math.max(0, Math.floor((SH - 360) / 2));
+  TS = SW < 520 ? 1 : 2; // body text scale; scale 2 overflows a phone-width screen
+}
+const fitW = w => Math.min(w, SW - 20);
 
 // Framed panel. (nova64.draw.drawPanel resolves to the UI-object version, so
 // drawPanel(x, y, w, h, opts) draws nothing; use this instead.)
@@ -652,6 +666,12 @@ function update(dt) {
     autoWait = 0.3;
     sfx('select');
   }
+  // Attract mode: a phone has no keyboard, so an idle title starts auto-play by
+  // itself, like an arcade cabinet. Press P to take over.
+  if (!auto && screen === 'title' && screenTime > 6) {
+    auto = true;
+    autoWait = 0.3;
+  }
   if (auto) updateAuto(dt);
 
   if (screen === 'title' && confirm) {
@@ -781,6 +801,7 @@ function drawStoryArt(kind, t, x, y, w, h) {
 }
 
 function draw() {
+  layout();
   if (screen === 'title') drawTitle();
   else if (screen === 'story') drawStory();
   else {
@@ -802,12 +823,12 @@ function drawTitle() {
   const fade = Math.floor(Math.min(1, t / 1.5) * 255);
   const ui = THEME.ui;
   const s = fitScale(TEXT.title, 6);
-  drawGlowTextCentered(TEXT.title, 320, 50, col(ui.title, fade), col(ui.border, Math.floor(fade * 0.7)), s);
-  printCentered(TEXT.subtitle, 320, 60 + s * 9, col(ui.text, fade), fitScale(TEXT.subtitle, 2));
+  drawGlowTextCentered(TEXT.title, CX, MY + 50, col(ui.title, fade), col(ui.border, Math.floor(fade * 0.7)), s);
+  printCentered(TEXT.subtitle, CX, MY + 60 + s * 9, col(ui.text, fade), fitScale(TEXT.subtitle, 2));
   if (t > 1.2) {
-    panel(170, 250, 300, 34, 200);
-    drawPulsingText(TEXT.prompt, 320, 262, col(ui.text), t, { frequency: 2, minAlpha: 140 });
-    printCentered('P: AUTO-PLAY', 320, 296, col(ui.dim));
+    panel(CX - fitW(300) / 2, MY + 250, fitW(300), 34, 200);
+    drawPulsingText(TEXT.prompt, CX, MY + 262, col(ui.text), t, { frequency: 2, minAlpha: 140 });
+    printCentered('P: AUTO-PLAY', CX, MY + 296, col(ui.dim));
   }
 }
 
@@ -824,29 +845,30 @@ function drawStory() {
   const ui = THEME.ui;
   const fade = Math.floor(Math.min(1, screenTime / 0.6) * 255);
   const page = storyPageOf(storyPage);
-  rectfill(0, 0, 640, 360, col(ui.panel, 200));
-  drawStoryArt(page.art, screenTime, 120, 14, 400, 196);
-  panel(40, 224, 560, 104, 235);
-  wrap(page.text, 44).forEach((line, i) => printCentered(line, 320, 240 + i * 18, col(ui.text, fade), 2));
-  printCentered((storyPage + 1) + ' / ' + STORY.length + '   Space to continue', 320, 316, col(ui.dim, fade));
+  rectfill(0, 0, SW, SH, col(ui.panel, 200));
+  drawStoryArt(page.art, screenTime, CX - fitW(400) / 2, MY + 14, fitW(400), 196);
+  panel(CX - fitW(560) / 2, MY + 224, fitW(560), 104, 235);
+  wrap(page.text, Math.floor((fitW(560) - 20) / (6 * TS))).forEach((line, i) => printCentered(line, CX, MY + 240 + i * 9 * TS, col(ui.text, fade), TS));
+  printCentered((storyPage + 1) + ' / ' + STORY.length + '   Space to continue', CX, MY + 316, col(ui.dim, fade));
 }
 
 function drawPartyPanel() {
   const ui = THEME.ui;
-  panel(0, 300, 640, 60, 225);
-  const w = Math.floor(640 / party.length);
+  const py = SH - 60;
+  panel(0, py, SW, 60, 225);
+  const w = Math.floor(SW / party.length);
   party.forEach((m, i) => {
     const x = i * w + 10;
     const active = screen === 'combat' && i === actor && enemyDelay <= 0;
     const alive = m.hp > 0;
-    print((active ? '> ' : '') + m.name, x, 308, alive ? col(m.color) : col(ui.dim));
-    drawProgressBar(x, 322, w - 60, 6, m.hp / m.maxHp, alive ? rgba8(70, 200, 90, 255) : rgba8(80, 40, 40, 255), rgba8(30, 20, 20, 255));
-    print(m.hp + '/' + m.maxHp, x + w - 54, 320, col(ui.text));
+    print((active ? '> ' : '') + m.name, x, py + 8, alive ? col(m.color) : col(ui.dim));
+    drawProgressBar(x, py + 22, w - 60, 6, m.hp / m.maxHp, alive ? rgba8(70, 200, 90, 255) : rgba8(80, 40, 40, 255), rgba8(30, 20, 20, 255));
+    print(m.hp + '/' + m.maxHp, x + w - 54, py + 20, col(ui.text));
     if (m.maxMp > 0) {
-      drawProgressBar(x, 334, w - 60, 4, m.mp / m.maxMp, rgba8(80, 120, 235, 255), rgba8(20, 20, 40, 255));
-      print(m.mp + '/' + m.maxMp, x + w - 54, 332, rgba8(150, 170, 240, 255));
+      drawProgressBar(x, py + 34, w - 60, 4, m.mp / m.maxMp, rgba8(80, 120, 235, 255), rgba8(20, 20, 40, 255));
+      print(m.mp + '/' + m.maxMp, x + w - 54, py + 32, rgba8(150, 170, 240, 255));
     }
-    if (m.defending) print('GUARD', x, 344, col(ui.title));
+    if (m.defending) print('GUARD', x, py + 44, col(ui.title));
   });
 }
 
@@ -856,15 +878,15 @@ function drawExploreHud() {
   drawMinimap();
   if (messageTime > 0) {
     const a = Math.floor(Math.min(1, messageTime) * 255);
-    panel(110, 250, 420, 26, Math.floor(a * 0.85));
-    printCentered(message, 320, 259, col(ui.text, a));
+    panel(CX - fitW(420) / 2, SH - 110, fitW(420), 26, Math.floor(a * 0.85));
+    printCentered(message, CX, SH - 101, col(ui.text, a));
   }
 }
 
 function drawMinimap() {
   const ui = THEME.ui;
   const size = 6;
-  const x0 = 640 - MAP[0].length * size - 10;
+  const x0 = SW - MAP[0].length * size - 10;
   const y0 = 10;
   rectfill(x0 - 3, y0 - 3, MAP[0].length * size + 6, MAP.length * size + 6, col(ui.panel, 200));
   for (const k of explored) {
@@ -879,21 +901,21 @@ function drawMinimap() {
 function drawCombatHud() {
   const ui = THEME.ui;
   const name = foe ? foe.name : '';
-  printCentered(name, 320, 12, foe && foe.boss ? rgba8(255, 90, 90, 255) : col(ui.title), 2);
-  if (foe) drawProgressBar(220, 34, 200, 6, foe.hp / foe.maxHp, rgba8(220, 60, 60, 255), rgba8(40, 15, 15, 255));
-  panel(10, 200, 130, 92, 220);
+  printCentered(name, CX, 12, foe && foe.boss ? rgba8(255, 90, 90, 255) : col(ui.title), 2);
+  if (foe) drawProgressBar(CX - 100, 34, 200, 6, foe.hp / foe.maxHp, rgba8(220, 60, 60, 255), rgba8(40, 15, 15, 255));
+  panel(10, SH - 160, 130, 92, 220);
   MENU.forEach((item, i) => {
     const on = i === menuIndex && enemyDelay <= 0;
-    print((on ? '> ' : '  ') + item, 20, 210 + i * 20, on ? col(ui.title) : col(ui.text));
+    print((on ? '> ' : '  ') + item, 20, SH - 150 + i * 20, on ? col(ui.title) : col(ui.text));
   });
-  panel(150, 230, 480, 62, 200);
-  combatLog.forEach((line, i) => print(line, 160, 238 + i * 13, col(ui.text)));
+  panel(150, SH - 130, Math.min(480, SW - 160), 62, 200);
+  combatLog.forEach((line, i) => print(line, 160, SH - 122 + i * 13, col(ui.text)));
 }
 
 function drawEnding(text, color) {
   const ui = THEME.ui;
-  rectfill(0, 0, 640, 300, rgba8(0, 0, 0, Math.min(170, Math.floor(screenTime * 200))));
-  drawGlowTextCentered(text, 320, 110, col(color), col(color, 120), fitScale(text, 4));
-  printCentered('GOLD ' + gold, 320, 160, col(ui.text), 2);
-  if (screenTime > 1) drawPulsingText('Press Space to play again', 320, 210, col(ui.text), screenTime, { frequency: 2, minAlpha: 140 });
+  rectfill(0, 0, SW, SH - 60, rgba8(0, 0, 0, Math.min(170, Math.floor(screenTime * 200))));
+  drawGlowTextCentered(text, CX, MY + 110, col(color), col(color, 120), fitScale(text, 4));
+  printCentered('GOLD ' + gold, CX, MY + 160, col(ui.text), 2);
+  if (screenTime > 1) drawPulsingText('Press Space to play again', CX, MY + 210, col(ui.text), screenTime, { frequency: 2, minAlpha: 140 });
 }

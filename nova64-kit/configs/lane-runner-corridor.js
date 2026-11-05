@@ -1,5 +1,12 @@
 // NOVA64 TEMPLATE: lane-runner-corridor
 // ============================== CONFIG ==============================
+// Chat words that pick this template. Edit them to change when it is used:
+// a game word picks the kind of game, a style word picks this look over the others.
+const KEYWORDS = {
+  game: ['runner', 'endless run', 'lane', 'subway', 'temple run'],
+  style: ['torch', 'stone', 'cave', 'cavern', 'crypt', 'tomb', 'mine', 'lava', 'medieval', 'castle', 'forest', 'corridor', 'ice', 'frost', 'crystal', 'fantasy']
+};
+
 const THEME = {
   trackStyle: 'corridor', // 'grid' = neon floor and pylons, 'corridor' = torchlit walls
   floor: 0x3a2c22,

@@ -19,18 +19,30 @@ import vm from 'node:vm'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const WEB = resolve(HERE, '..')
 const MAIGE = resolve(WEB, '..')
-const IOS = join(MAIGE, 'iOSMaigeXr')
-const ANDROID = join(MAIGE, 'AndroidMaigeXr')
+// Override with a worktree path when a mobile repo is checked out on another branch.
+const IOS = process.env.NOVA64_KIT_IOS ? resolve(process.env.NOVA64_KIT_IOS) : join(MAIGE, 'iOSMaigeXr')
+const ANDROID = process.env.NOVA64_KIT_ANDROID ? resolve(process.env.NOVA64_KIT_ANDROID) : join(MAIGE, 'AndroidMaigeXr')
 const check = process.argv.includes('--check')
 const NOVA64_VERSION = '0.5.6'
 
 const read = (p) => readFileSync(join(HERE, p), 'utf8')
 const meta = JSON.parse(read('templates.json'))
+// The chat words that pick a template, from the KEYWORDS const in its CONFIG.
+function keywordsOf(id, config) {
+  const m = /^const KEYWORDS = (\{[\s\S]*?\n\});/m.exec(config)
+  if (!m) throw new Error(`configs/${id}.js has no KEYWORDS`)
+  const k = vm.runInNewContext(`(${m[1]})`)
+  const clean = (a) => (Array.isArray(a) ? a : []).map((w) => String(w).toLowerCase().trim()).filter(Boolean)
+  return { game: clean(k.game), style: clean(k.style) }
+}
 const data = {
   version: NOVA64_VERSION,
   namespace: JSON.parse(read(`namespace-${NOVA64_VERSION}.json`)),
   promptTemplate: read('template-prompt.txt'),
-  templates: meta.map((t) => ({ ...t, config: read(`configs/${t.id}.js`) })),
+  templates: meta.map((t) => {
+    const config = read(`configs/${t.id}.js`)
+    return { ...t, keywords: keywordsOf(t.id, config), config }
+  }),
   engines: Object.fromEntries(readdirSync(join(HERE, 'engines')).map((f) => [f.replace(/\.js$/, ''), read(`engines/${f}`)]))
 }
 const kitSource = read('kit.src.js')
@@ -62,12 +74,17 @@ const VECTOR_MESSAGES = [
   ['A medieval RPG with a party of four', ''],
   ['a racing game with lanes of traffic', ''],
   ['a calm forest scene with fireflies', ''],
-  ['different game: an arena dodger in a crystal cavern', 'lane-runner-corridor']
+  ['different game: an arena dodger in a crystal cavern', 'lane-runner-corridor'],
+  ['dodging lasers in a neon arena', ''],
+  ['subway runner through a frosty tomb', ''],
+  ['an RPG maze with a hacker party in cyberspace', ''],
+  ['endless running game', ''],
+  ['spaceship dodging waves of asteroids', '']
 ]
 const vectors = VECTOR_MESSAGES.map(([message, current]) => ({
   message,
   current: current || null,
-  expected: Kit.chooseTemplate(message, current ? `// NOVA64 TEMPLATE: ${current}\n` : '')
+  ...(({ id, words }) => ({ expected: id, words }))(Kit.pickTemplate(message, current ? `// NOVA64 TEMPLATE: ${current}\n` : ''))
 }))
 
 const outputs = []
@@ -114,8 +131,8 @@ const swiftString = (s) => {
   while (s.includes(`"""${hashes}`) || s.includes(`"${hashes}`)) hashes += '#'
   return `${hashes}"""\n${s.replace(/\n$/, '')}\n"""${hashes}`
 }
-const nativeTemplates = data.templates.map(({ id, family, genre, style, description, guide, config }) =>
-  ({ id, family, genre, style, description, guide, config }))
+const nativeTemplates = data.templates.map(({ id, family, genre, style, keywords, description, guide, config }) =>
+  ({ id, family, genre, style, keywords, description, guide, config }))
 if (existsSync(join(IOS, 'XRAiAssistant'))) {
   outputs.push([join(IOS, 'XRAiAssistant/Library3D/Nova64Templates.generated.swift'), [
     banner,
@@ -129,6 +146,7 @@ if (existsSync(join(IOS, 'XRAiAssistant'))) {
     nativeTemplates.map((t) => [
       '        Nova64TemplateInfo(',
       `            id: "${t.id}", family: "${t.family}", genre: "${t.genre}", style: "${t.style}",`,
+      `            gameWords: ${JSON.stringify(t.keywords.game)}, styleWords: ${JSON.stringify(t.keywords.style)},`,
       `            description: ${swiftString(t.description)},`,
       `            guide: ${swiftString(t.guide)},`,
       `            config: ${swiftString(t.config)}`,
@@ -137,8 +155,8 @@ if (existsSync(join(IOS, 'XRAiAssistant'))) {
     '    ]',
     '',
     '    /// chooseTemplate(message, currentTemplateId) -> expected id, computed by the JS kit.',
-    '    static let testVectors: [(message: String, current: String?, expected: String?)] = [',
-    vectors.map((v) => `        (${JSON.stringify(v.message)}, ${v.current ? JSON.stringify(v.current) : 'nil'}, ${v.expected ? JSON.stringify(v.expected) : 'nil'})`).join(',\n'),
+    '    static let testVectors: [(message: String, current: String?, expected: String?, words: [String])] = [',
+    vectors.map((v) => `        (${JSON.stringify(v.message)}, ${v.current ? JSON.stringify(v.current) : 'nil'}, ${v.expected ? JSON.stringify(v.expected) : 'nil'}, ${JSON.stringify(v.words)})`).join(',\n'),
     '    ]',
     '}',
     ''
@@ -159,6 +177,7 @@ if (existsSync(androidModels)) {
     nativeTemplates.map((t) => [
       '        Nova64TemplateInfo(',
       `            id = ${ktString(t.id)}, family = ${ktString(t.family)}, genre = ${ktString(t.genre)}, style = ${ktString(t.style)},`,
+      `            gameWords = listOf(${t.keywords.game.map(ktString).join(', ')}), styleWords = listOf(${t.keywords.style.map(ktString).join(', ')}),`,
       `            description = ${ktString(t.description)},`,
       `            guide = ${ktString(t.guide)},`,
       `            config = ${ktString(t.config)}`,
@@ -167,8 +186,8 @@ if (existsSync(androidModels)) {
     '    )',
     '',
     '    /** chooseTemplate(message, currentTemplateId) -> expected id, computed by the JS kit. */',
-    '    val testVectors: List<Triple<String, String?, String?>> = listOf(',
-    vectors.map((v) => `        Triple(${ktString(v.message)}, ${v.current ? ktString(v.current) : 'null'}, ${v.expected ? ktString(v.expected) : 'null'})`).join(',\n'),
+    '    val testVectors: List<Nova64TemplateVector> = listOf(',
+    vectors.map((v) => `        Nova64TemplateVector(${ktString(v.message)}, ${v.current ? ktString(v.current) : 'null'}, ${v.expected ? ktString(v.expected) : 'null'}, listOf(${v.words.map(ktString).join(', ')}))`).join(',\n'),
     '    )',
     '}',
     ''

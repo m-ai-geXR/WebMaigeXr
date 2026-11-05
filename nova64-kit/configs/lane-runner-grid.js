@@ -1,5 +1,12 @@
 // NOVA64 TEMPLATE: lane-runner-grid
 // ============================== CONFIG ==============================
+// Chat words that pick this template. Edit them to change when it is used:
+// a game word picks the kind of game, a style word picks this look over the others.
+const KEYWORDS = {
+  game: ['runner', 'endless run', 'lane', 'subway', 'temple run'],
+  style: ['neon', 'cyber', 'synth', 'grid', 'digital', 'hacker', 'tron', 'data', 'electric', 'vapor', 'laser', 'sci-fi', 'scifi', 'space', 'holo']
+};
+
 const THEME = {
   trackStyle: 'grid', // 'grid' = neon floor and pylons, 'corridor' = torchlit walls
   floor: 0x060b1e,

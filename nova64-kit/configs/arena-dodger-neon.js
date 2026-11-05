@@ -1,5 +1,12 @@
 // NOVA64 TEMPLATE: arena-dodger-neon
 // ============================== CONFIG ==============================
+// Chat words that pick this template. Edit them to change when it is used:
+// a game word picks the kind of game, a style word picks this look over the others.
+const KEYWORDS = {
+  game: ['arena', 'dodge', 'dodging', 'bullet hell', 'top-down', 'survive waves', 'waves of'],
+  style: ['neon', 'cyber', 'synth', 'grid', 'digital', 'hacker', 'tron', 'data', 'electric', 'vapor', 'laser', 'sci-fi', 'scifi', 'space', 'holo']
+};
+
 const THEME = {
   arenaStyle: 'neon', // 'cave' = crystal cavern, 'neon' = glowing ring grid
   floor: 0x060b1e,

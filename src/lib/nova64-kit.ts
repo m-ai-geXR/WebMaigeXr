@@ -11,6 +11,8 @@ export interface Nova64TemplateInfo {
   family: 'dungeon' | 'runner' | 'arena'
   genre: string
   style: string
+  /** Chat words that pick it: game words choose the kind of game, style words the look. */
+  keywords: { game: string[]; style: string[] }
   description: string
   guide: string
   /** Example CONFIG, starting with its `// NOVA64 TEMPLATE: <id>` line. */
@@ -26,12 +28,22 @@ export interface Nova64PrepareResult {
   problems: string[]
 }
 
+export interface Nova64TemplatePick {
+  id: string | null
+  /** The keywords in the request that picked it; empty for a follow-up edit. */
+  words: string[]
+  followUp?: boolean
+}
+
 interface Nova64Kit {
   version: string
   templates(): Nova64TemplateInfo[]
   getTemplate(id: string): Nova64TemplateInfo | null
   templateIdOf(code: string | null | undefined): string | null
   chooseTemplate(message: string, currentCode?: string | null): string | null
+  pickTemplate(message: string, currentCode?: string | null): Nova64TemplatePick
+  templateNote(pick: Nova64TemplatePick): string
+  chipLabel(template: Nova64TemplateInfo): string
   configOf(code: string): string | null
   templatePrompt(id: string, currentCode?: string | null): string
   prepare(code: string): Nova64PrepareResult
@@ -48,7 +60,12 @@ export const nova64Kit = Nova64KitRaw as Nova64Kit
  * enemies faster") edit the CONFIG already in the editor.
  */
 export function nova64TemplateRequest(message: string, currentCode?: string | null) {
-  const id = nova64Kit.chooseTemplate(message, currentCode)
-  if (!id) return null
-  return { templateId: id, prompt: nova64Kit.templatePrompt(id, currentCode) }
+  const pick = nova64Kit.pickTemplate(message, currentCode)
+  if (!pick.id) return null
+  return {
+    templateId: pick.id,
+    prompt: nova64Kit.templatePrompt(pick.id, currentCode),
+    /** Opens the reply in chat: which template the user's words picked. */
+    note: nova64Kit.templateNote(pick)
+  }
 }

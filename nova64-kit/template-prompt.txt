@@ -7,6 +7,7 @@ Reply with one or two sentences about your design, then ONLY the CONFIG below re
 
 Rules:
 - Keep the first line exactly: // NOVA64 TEMPLATE: {id}
+- Keep KEYWORDS exactly as it is.
 - Keep every const and property name. Change the values, names, text, colours and numbers so the game matches the request. Arrays may have more or fewer entries of the same shape.
 - 3D colours are 0xRRGGBB numbers; UI colours are [r, g, b]. Never use 0x000000. Keep enemies, pickups and text bright against the dark scene.
 - Do not add functions, API calls or new consts.

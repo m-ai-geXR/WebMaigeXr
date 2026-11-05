@@ -29,7 +29,21 @@ let sparks = null;
 
 const col = (c, a = 255) => rgba8(c[0], c[1], c[2], a);
 const hexCol = (hex, a = 255) => rgba8((hex >> 16) & 255, (hex >> 8) & 255, hex & 255, a);
-const fitScale = (text, max) => Math.max(1, Math.min(max, Math.floor(600 / (text.length * 6))));
+const fitScale = (text, max) => Math.max(1, Math.min(max, Math.floor((SW - 40) / (text.length * 6))));
+
+// Screen layout. The runner is sized to the host pane (a wide desktop pane or a
+// phone in portrait), so the 2D layer is laid out from the real screen size every
+// frame instead of a fixed 640x360. Centred screens keep their 640x360 design,
+// shifted down by MY and narrowed with fitW() when the screen is smaller.
+let SW = 640, SH = 360, CX = 320, MY = 0, TS = 2;
+function layout() {
+  SW = screenWidth();
+  SH = screenHeight();
+  CX = Math.floor(SW / 2);
+  MY = Math.max(0, Math.floor((SH - 360) / 2));
+  TS = SW < 520 ? 1 : 2; // body text scale; scale 2 overflows a phone-width screen
+}
+const fitW = w => Math.min(w, SW - 20);
 const dist = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
 
 function shade(hex, amount) {
@@ -447,6 +461,12 @@ function update(dt) {
     autoWait = 0.3;
     sfx('select');
   }
+  // Attract mode: a phone has no keyboard, so an idle title starts auto-play by
+  // itself, like an arcade cabinet. Press P to take over.
+  if (!auto && screen === 'title' && screenTime > 6) {
+    auto = true;
+    autoWait = 0.3;
+  }
   if (auto) updateAuto(dt);
 
   if (screen === 'title' && confirm && !auto) beginStory();
@@ -464,6 +484,7 @@ function update(dt) {
 
 // ---------- 2D ----------
 function draw() {
+  layout();
   if (screen === 'title') drawTitle();
   else if (screen === 'story') drawStory();
   else {
@@ -482,35 +503,35 @@ function drawTitle() {
   const fade = Math.floor(Math.min(1, t / 1.5) * 255);
   const ui = THEME.ui;
   const s = fitScale(TEXT.title, 6);
-  drawGlowTextCentered(TEXT.title, 320, 50, col(ui.title, fade), col(ui.border, Math.floor(fade * 0.7)), s);
-  printCentered(TEXT.subtitle, 320, 60 + s * 9, col(ui.text, fade), fitScale(TEXT.subtitle, 2));
+  drawGlowTextCentered(TEXT.title, CX, MY + 50, col(ui.title, fade), col(ui.border, Math.floor(fade * 0.7)), s);
+  printCentered(TEXT.subtitle, CX, MY + 60 + s * 9, col(ui.text, fade), fitScale(TEXT.subtitle, 2));
   if (t > 1.2) {
-    panel(170, 250, 300, 34, 200);
-    drawPulsingText(TEXT.prompt, 320, 262, col(ui.text), t, { frequency: 2, minAlpha: 140 });
-    printCentered('Arrows/WASD: move   Space: dash   P: AUTO-PLAY', 320, 296, col(ui.dim));
-    if (best > 0) printCentered('BEST ' + Math.floor(best), 320, 314, col(ui.title));
+    panel(CX - fitW(300) / 2, MY + 250, fitW(300), 34, 200);
+    drawPulsingText(TEXT.prompt, CX, MY + 262, col(ui.text), t, { frequency: 2, minAlpha: 140 });
+    printCentered('Arrows/WASD: move   Space: dash   P: AUTO-PLAY', CX, MY + 296, col(ui.dim));
+    if (best > 0) printCentered('BEST ' + Math.floor(best), CX, MY + 314, col(ui.title));
   }
 }
 
 function drawHud() {
   const ui = THEME.ui;
-  panel(0, 0, 640, 22, 200);
+  panel(0, 0, SW, 22, 200);
   print('SCORE ' + Math.floor(score), 10, 7, col(ui.text));
-  printCentered('WAVE ' + wave + '   ' + GEM.name + 'S ' + gemsTaken, 320, 7, col(ui.dim));
-  for (let i = 0; i < lives; i++) drawDiamond(570 + i * 18, 11, 6, 6, hexCol(PLAYER.color), true);
-  if (combo > 1) printCentered('x' + Math.min(5, combo) + ' COMBO', 320, 40, col(ui.title, 160 + Math.floor(Math.sin(screenTime * 10) * 90)), 2);
+  printCentered('WAVE ' + wave + '   ' + GEM.name + 'S ' + gemsTaken, CX, 7, col(ui.dim));
+  for (let i = 0; i < lives; i++) drawDiamond(SW - 70 + i * 18, 11, 6, 6, hexCol(PLAYER.color), true);
+  if (combo > 1) printCentered('x' + Math.min(5, combo) + ' COMBO', CX, 40, col(ui.title, 160 + Math.floor(Math.sin(screenTime * 10) * 90)), 2);
   const ready = dashReady <= 0;
-  print(ready ? 'DASH READY' : 'DASH', 10, 328, ready ? col(ui.title) : col(ui.dim));
-  drawProgressBar(10, 340, 120, 6, 1 - Math.max(0, dashReady) / DIFFICULTY.dashCooldown, hexCol(PLAYER.color), col(ui.panel, 200));
+  print(ready ? 'DASH READY' : 'DASH', 10, SH - 32, ready ? col(ui.title) : col(ui.dim));
+  drawProgressBar(10, SH - 20, 120, 6, 1 - Math.max(0, dashReady) / DIFFICULTY.dashCooldown, hexCol(PLAYER.color), col(ui.panel, 200));
 }
 
 function drawOver() {
   const ui = THEME.ui;
-  rectfill(0, 0, 640, 360, rgba8(0, 0, 0, Math.min(170, Math.floor(screenTime * 200))));
-  drawGlowTextCentered(TEXT.over, 320, 110, col([255, 90, 80]), col([255, 90, 80], 120), fitScale(TEXT.over, 4));
-  printCentered('SCORE ' + Math.floor(score) + '   BEST ' + Math.floor(best), 320, 160, col(ui.text), 2);
-  printCentered('WAVE ' + wave + '   ' + gemsTaken + ' ' + GEM.name + 'S   ' + Math.floor(survived) + 's', 320, 186, col(ui.dim));
-  if (screenTime > 1) drawPulsingText('Press Space to play again', 320, 220, col(ui.text), screenTime, { frequency: 2, minAlpha: 140 });
+  rectfill(0, 0, SW, SH, rgba8(0, 0, 0, Math.min(170, Math.floor(screenTime * 200))));
+  drawGlowTextCentered(TEXT.over, CX, MY + 110, col([255, 90, 80]), col([255, 90, 80], 120), fitScale(TEXT.over, 4));
+  printCentered('SCORE ' + Math.floor(score) + '   BEST ' + Math.floor(best), CX, MY + 160, col(ui.text), 2);
+  printCentered('WAVE ' + wave + '   ' + gemsTaken + ' ' + GEM.name + 'S   ' + Math.floor(survived) + 's', CX, MY + 186, col(ui.dim));
+  if (screenTime > 1) drawPulsingText('Press Space to play again', CX, MY + 220, col(ui.text), screenTime, { frequency: 2, minAlpha: 140 });
 }
 
 // ---------- story slides with procedural illustrations ----------
@@ -533,11 +554,11 @@ function drawStory() {
   const ui = THEME.ui;
   const fade = Math.floor(Math.min(1, screenTime / 0.6) * 255);
   const page = storyPageOf(storyPage);
-  rectfill(0, 0, 640, 360, col(ui.panel, 200));
-  drawStoryArt(page.art, screenTime, 120, 14, 400, 196);
-  panel(40, 224, 560, 104, 235);
-  wrap(page.text, 44).forEach((line, i) => printCentered(line, 320, 240 + i * 18, col(ui.text, fade), 2));
-  printCentered((storyPage + 1) + ' / ' + STORY.length + '   Space to continue', 320, 316, col(ui.dim, fade));
+  rectfill(0, 0, SW, SH, col(ui.panel, 200));
+  drawStoryArt(page.art, screenTime, CX - fitW(400) / 2, MY + 14, fitW(400), 196);
+  panel(CX - fitW(560) / 2, MY + 224, fitW(560), 104, 235);
+  wrap(page.text, Math.floor((fitW(560) - 20) / (6 * TS))).forEach((line, i) => printCentered(line, CX, MY + 240 + i * 9 * TS, col(ui.text, fade), TS));
+  printCentered((storyPage + 1) + ' / ' + STORY.length + '   Space to continue', CX, MY + 316, col(ui.dim, fade));
 }
 
 function drawStoryArt(kind, t, x, y, w, h) {

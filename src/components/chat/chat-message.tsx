@@ -7,6 +7,8 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 import { useTheme } from 'next-themes'
+import { nova64Kit } from '@/lib/nova64-kit'
+import { Nova64TemplateChips } from './nova64-template-chips'
 
 interface ChatMessageProps {
   message: ChatMessageType
@@ -19,6 +21,8 @@ export function ChatMessage({ message, onExtractCode, onCopy, onDownload }: Chat
   const { theme } = useTheme()
   const isUser = message.role === 'user'
   const hasCode = extractCodeFromMessage(message.content) !== null
+  // Replies built on a Nova64 game template show the template chips.
+  const templateId = !isUser && message.library === 'nova64' ? nova64Kit.templateIdOf(message.content) : null
 
   return (
     <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -78,6 +82,8 @@ export function ChatMessage({ message, onExtractCode, onCopy, onDownload }: Chat
             </div>
           )}
         </div>
+
+        {templateId && <Nova64TemplateChips activeId={templateId} title="Game templates: say one of these words, or tap to preview" />}
 
         {/* Message metadata and actions */}
         <div className={`flex items-center gap-2 mt-1 text-xs text-brand-muted ${
