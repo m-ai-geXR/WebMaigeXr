@@ -10,6 +10,23 @@ import { ExamplesModal } from '../examples/examples-modal'
 import toast from 'react-hot-toast'
 import { Wordmark } from '@/components/brand/wordmark'
 import { classifyAIError, formatAIErrorLine, formatAIErrorMessage } from '@/lib/ai-errors'
+import { nova64Kit, nova64TemplateRequest } from '@/lib/nova64-kit'
+
+/**
+ * Nova64 carts go through the shared kit: template CONFIGs are spliced into their
+ * tested engine, imports are generated, and known mistakes are repaired. What it
+ * did is reported in the chat so nothing changes silently.
+ */
+function prepareForLibrary(code: string, libraryId?: string): string {
+  if (libraryId !== 'nova64') return code
+  const result = nova64Kit.prepare(code)
+  const summary = nova64Kit.summarize(result)
+  if (summary) {
+    useAppStore.getState().addMessage({ role: 'assistant', content: `🛠️ **Nova64 kit**\n\n${summary.split('\n').map((line) => `- ${line}`).join('\n')}`, library: 'nova64' })
+    if (result.problems.length) toast(`Nova64: ${result.problems[0]}`, { icon: '⚠️' })
+  }
+  return result.code
+}
 
 export function ChatInterface() {
   const {
@@ -117,8 +134,15 @@ export function ChatInterface() {
         enhancedPrompt += `\n\nLibrary: ${library.name} v${library.version}`
         enhancedPrompt += `\nDescription: ${library.description}`
         
-        // Add code template if generating new code
-        if (userMessage.toLowerCase().includes('create') || userMessage.toLowerCase().includes('make') || userMessage.toLowerCase().includes('generate')) {
+        // Nova64 games: customise a tested engine's CONFIG instead of writing a whole cart.
+        const gameTemplate = library.id === 'nova64'
+          ? nova64TemplateRequest(userMessage, useAppStore.getState().currentCode)
+          : null
+
+        if (gameTemplate) {
+          enhancedPrompt += `\n\n${gameTemplate.prompt}`
+        } else if (userMessage.toLowerCase().includes('create') || userMessage.toLowerCase().includes('make') || userMessage.toLowerCase().includes('generate')) {
+          // Add code template if generating new code
           enhancedPrompt += `\n\nUse this as a starting template:\n\`\`\`javascript\n${library.codeTemplate}\n\`\`\``
         }
       }
@@ -167,7 +191,7 @@ export function ChatInterface() {
       if (hasCode) {
         const extractedCode = extractCodeFromMessage(streamedContent)
         if (extractedCode) {
-          setCurrentCode(extractedCode)
+          setCurrentCode(prepareForLibrary(extractedCode, library?.id))
           toast.success('Code extracted and ready to run!')
         }
       }
@@ -199,7 +223,7 @@ export function ChatInterface() {
   const handleCodeExtract = (content: string) => {
     const code = extractCodeFromMessage(content)
     if (code) {
-      setCurrentCode(code)
+      setCurrentCode(prepareForLibrary(code, getCurrentLibrary()?.id))
       setCurrentView('playground')
       toast.success('Code sent to playground!')
     } else {

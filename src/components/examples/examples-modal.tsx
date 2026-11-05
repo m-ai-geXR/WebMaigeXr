@@ -5,6 +5,7 @@ import { X, Copy, Play, Code2 } from 'lucide-react'
 import { useAppStore } from '@/store/app-store'
 import { copyToClipboard } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { nova64Kit } from '@/lib/nova64-kit'
 
 interface Example {
   id: string
@@ -227,7 +228,7 @@ function init() {
     pillars.push(id);
   }
 
-  nova64.scene.createPlane(80, 160, 0x101828, [0, -1, -40]);
+  nova64.scene.setRotation(nova64.scene.createPlane(80, 160, 0x101828, [0, -1, -40]), -Math.PI / 2, 0, 0); // floor, laid flat
 
   nova64.fx.enableBloom();
   nova64.fx.setBloomStrength(0.8);
@@ -316,6 +317,17 @@ function draw() {
   }
 ]
 
+// Nova64 game templates: each example is just a CONFIG; the kit adds the tested engine.
+const NOVA64_TEMPLATE_EXAMPLES: Example[] = nova64Kit.templates().map((t) => ({
+  id: `nova64-template-${t.id}`,
+  title: `${t.genre}: ${t.style}`,
+  description: `Game template. ${t.description} Describe your own version in the chat to restyle it.`,
+  library: 'nova64',
+  code: t.config,
+  category: 'advanced'
+}))
+EXAMPLES.push(...NOVA64_TEMPLATE_EXAMPLES)
+
 interface ExamplesModalProps {
   isOpen: boolean
   onClose: () => void
@@ -343,7 +355,7 @@ export function ExamplesModal({ isOpen, onClose }: ExamplesModalProps) {
       toast.success(`Switched to ${example.library}`)
     }
 
-    setCurrentCode(example.code)
+    setCurrentCode(example.library === 'nova64' ? nova64Kit.prepare(example.code).code : example.code)
     setCurrentView('playground')
     toast.success('Example loaded in playground!')
     onClose()

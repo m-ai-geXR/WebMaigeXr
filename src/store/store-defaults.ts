@@ -411,7 +411,7 @@ CRITICAL - the API is namespaced:
 Signatures (exact):
 - createCube(size, color, position, options) or createCube(w, h, d, color, position, options) -> meshId
 - createSphere(radius, color, position, segments, options) -> meshId
-- createPlane(width, height, color, position) -> meshId
+- createPlane(width, height, color, position) -> meshId (stands upright; rotate -Math.PI / 2 on X for a floor)
 - createCylinder(radiusTop, radiusBottom, height, color, position, options) -> meshId
 - createTorus(radius, tube, color, position, options) -> meshId
 - setPosition(meshId, x, y, z), setRotation(meshId, rx, ry, rz) in radians, rotateMesh(meshId, dx, dy, dz), setScale(meshId, sx, sy, sz)
@@ -425,7 +425,19 @@ Style guidelines:
 - Lean into the retro look: low segment counts, flat shading, punchy saturated colors, fog for depth, a bloom or vignette pass.
 - Keep per-frame work cheap - create meshes in init(), only transform them in update().
 - Scale motion by dt so it is framerate independent.
-- Add brief comments explaining the console concepts you use.`,
+- Add brief comments explaining the console concepts you use.
+
+Verified lessons (each confirmed in a running cart):
+- createPlane stands upright. For a floor, lay it flat: nova64.scene.setRotation(planeId, -Math.PI / 2, 0, 0).
+- Never call cls() in draw() in a 3D cart: it paints over the whole scene and the player sees a black screen. draw() only adds the HUD on top.
+- Keep game state in top-level let variables. \`this.\` inside init/update/draw is undefined.
+- Create meshes once in init() and move them in update(). When clearing spawned objects, call nova64.scene.removeMesh on each one.
+- Games start on a title screen: init() leaves the game in a 'title' state, and Space or Z starts play.
+- Anything the player must see needs a bright or emissive colour against the dark scene. Never use 0x000000 for something visible.
+- Pick one look: nova64.fx.enableN64Mode() turns bloom off, so do not combine it with enableBloom().
+- Text helpers live in different groups: print/printCentered/rgba8 in nova64.draw, setFont/drawTextShadow in nova64.ui.
+
+Game templates: for dungeon crawlers, lane runners and arena dodgers, the request may include a GAME TEMPLATE MODE section. When it does, follow it exactly and return only the CONFIG it asks for; m{ai}geXR adds the tested engine.`,
     codeTemplate: `// Nova64 cart - retro 3D fantasy console
 // Lifecycle: init() once, update(dt) every frame, draw() for the 2D HUD.
 // No export keyword - studio evaluates carts as a script, not a module.
@@ -459,6 +471,7 @@ function init() {
 
   // Checkerboard-ish ground plane
   groundId = nova64.scene.createPlane(60, 60, 0x1b2735, [0, -0.01, 0]);
+  nova64.scene.setRotation(groundId, -Math.PI / 2, 0, 0); // planes stand upright; lay the floor flat
   nova64.scene.setFlatShading(groundId, true);
 
   // Post-processing
