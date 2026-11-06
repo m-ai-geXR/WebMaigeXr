@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import fs from 'fs'
 import path from 'path'
 import { execFileSync } from 'child_process'
-import { nova64Kit, nova64TemplateRequest } from '@/lib/nova64-kit'
+import { nova64Kit, nova64TemplateRequest, nova64RepairPrompt, NOVA64_MAX_REPAIRS } from '@/lib/nova64-kit'
 import { NOVA64_KIT_TEST_VECTORS } from '@/lib/nova64-kit.generated'
 import { defaultLibraries } from '@/store/store-defaults'
 import { NOVA64_VERSION } from '@/lib/nova64-runner'
@@ -204,5 +204,21 @@ describe('template keywords', () => {
 
   it('tells the model to keep KEYWORDS as they are', () => {
     expect(nova64Kit.templatePrompt('arena-dodger-neon')).toContain('Keep KEYWORDS exactly as it is.')
+  })
+})
+
+describe('Nova64 repair loop', () => {
+  it('turns kit problems into a compact repair prompt with the cart', () => {
+    const broken = 'function init() { this.c = nova64.scene.createCube(1) }\nfunction update(dt) { nova64.scene.notARealThing() }'
+    const result = nova64Kit.prepare(broken)
+    expect(result.problems.length).toBeGreaterThan(0)
+    const prompt = nova64RepairPrompt(result.code, result.problems)
+    for (const p of result.problems) expect(prompt).toContain(`- ${p}`)
+    expect(prompt).toContain(result.code)
+    expect(prompt).toMatch(/no import or export/)
+  })
+
+  it('is bounded to 2 attempts', () => {
+    expect(NOVA64_MAX_REPAIRS).toBe(2)
   })
 })

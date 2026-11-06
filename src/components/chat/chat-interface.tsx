@@ -11,21 +11,25 @@ import { Nova64TemplateChips } from './nova64-template-chips'
 import toast from 'react-hot-toast'
 import { Wordmark } from '@/components/brand/wordmark'
 import { classifyAIError, formatAIErrorLine, formatAIErrorMessage } from '@/lib/ai-errors'
-import { nova64Kit, nova64TemplateRequest } from '@/lib/nova64-kit'
+import { nova64Kit, nova64TemplateRequest, nova64RepairPrompt, NOVA64_MAX_REPAIRS } from '@/lib/nova64-kit'
 
 /**
  * Nova64 carts go through the shared kit: template CONFIGs are spliced into their
  * tested engine, imports are generated, and known mistakes are repaired. What it
  * did is reported in the chat so nothing changes silently.
  */
-function prepareForLibrary(code: string, libraryId?: string): string {
-  if (libraryId !== 'nova64') return code
-  const result = nova64Kit.prepare(code)
+function reportKitResult(result: ReturnType<typeof nova64Kit.prepare>) {
   const summary = nova64Kit.summarize(result)
   if (summary) {
     useAppStore.getState().addMessage({ role: 'assistant', content: `🛠️ **Nova64 kit**\n\n${summary.split('\n').map((line) => `- ${line}`).join('\n')}`, library: 'nova64' })
     if (result.problems.length) toast(`Nova64: ${result.problems[0]}`, { icon: '⚠️' })
   }
+}
+
+function prepareForLibrary(code: string, libraryId?: string): string {
+  if (libraryId !== 'nova64') return code
+  const result = nova64Kit.prepare(code)
+  reportKitResult(result)
   return result.code
 }
 
@@ -150,54 +154,64 @@ export function ChatInterface() {
         }
       }
 
-      // Add placeholder for streaming response
-      const assistantMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      addMessage({
-        role: 'assistant',
-        content: '',
-        library: library?.id,
-        hasCode: false
-      })
-
-      // A template reply opens with which template the user's words picked.
-      let streamedContent = gameTemplate?.note ? `${gameTemplate.note}\n\n` : ''
-      
-      await aiService.generateStreamingResponse(enhancedPrompt, {
-        provider: provider.id,
-        model: model.id,
-        apiKey,
-        temperature: settings.temperature,
-        topP: settings.topP,
-        effort: settings.effort,
-        systemPrompt: settings.systemPrompt
-      }, (chunk) => {
-        if (!chunk.done) {
+      /** Stream one reply into a new assistant message and return its full text. */
+      const streamReply = async (prompt: string, prefix: string): Promise<string> => {
+        addMessage({ role: 'assistant', content: prefix, library: library?.id, hasCode: false })
+        let streamedContent = prefix
+        await aiService.generateStreamingResponse(prompt, {
+          provider: provider.id,
+          model: model.id,
+          apiKey,
+          temperature: settings.temperature,
+          topP: settings.topP,
+          effort: settings.effort,
+          systemPrompt: settings.systemPrompt
+        }, (chunk) => {
+          if (chunk.done) return
           streamedContent += chunk.content
-          
-          // Update the last message with streamed content
           const updatedMessages = [...useAppStore.getState().messages]
-          const lastMessageIndex = updatedMessages.length - 1
-          if (lastMessageIndex >= 0 && updatedMessages[lastMessageIndex].role === 'assistant') {
-            updatedMessages[lastMessageIndex] = {
-              ...updatedMessages[lastMessageIndex],
+          const last = updatedMessages.length - 1
+          if (last >= 0 && updatedMessages[last].role === 'assistant') {
+            updatedMessages[last] = {
+              ...updatedMessages[last],
               content: streamedContent,
               hasCode: extractCodeFromMessage(streamedContent) !== null
             }
             useAppStore.setState({ messages: updatedMessages })
           }
-        }
-      })
+        })
+        return streamedContent
+      }
 
-      // Final update
-      const hasCode = extractCodeFromMessage(streamedContent) !== null
+      // A template reply opens with which template the user's words picked.
+      const reply = await streamReply(enhancedPrompt, gameTemplate?.note ? `${gameTemplate.note}\n\n` : '')
+      const extractedCode = extractCodeFromMessage(reply)
 
-      // Auto-extract and set code if found
-      if (hasCode) {
-        const extractedCode = extractCodeFromMessage(streamedContent)
-        if (extractedCode) {
-          setCurrentCode(prepareForLibrary(extractedCode, library?.id))
-          toast.success('Code extracted and ready to run!')
+      if (extractedCode && library?.id === 'nova64') {
+        // Check, then repair: feed concrete problems back to the model, bounded and
+        // visible. Keep the best version so far if a repair makes things worse.
+        let best = nova64Kit.prepare(extractedCode)
+        reportKitResult(best)
+        for (let attempt = 1; best.problems.length && attempt <= NOVA64_MAX_REPAIRS; attempt++) {
+          const repairReply = await streamReply(
+            `${library.systemPrompt}\n\n${nova64RepairPrompt(best.code, best.problems)}`,
+            `🔧 **Fixing (${attempt}/${NOVA64_MAX_REPAIRS}):** ${best.problems[0]}\n\n`
+          )
+          const repairedCode = extractCodeFromMessage(repairReply)
+          if (!repairedCode) break
+          const repaired = nova64Kit.prepare(repairedCode)
+          reportKitResult(repaired)
+          if (repaired.problems.length > best.problems.length) {
+            addMessage({ role: 'assistant', content: 'That repair was worse, so the previous version is kept.', library: 'nova64' })
+            break
+          }
+          best = repaired
         }
+        setCurrentCode(best.code)
+        toast.success(best.problems.length ? 'Code ready, with problems still noted above' : 'Code extracted and ready to run!')
+      } else if (extractedCode) {
+        setCurrentCode(prepareForLibrary(extractedCode, library?.id))
+        toast.success('Code extracted and ready to run!')
       }
 
     } catch (error) {

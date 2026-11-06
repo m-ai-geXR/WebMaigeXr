@@ -69,3 +69,22 @@ export function nova64TemplateRequest(message: string, currentCode?: string | nu
     note: nova64Kit.templateNote(pick)
   }
 }
+
+/** Bounded, visible repair attempts for Nova64 carts the kit could not fix. */
+export const NOVA64_MAX_REPAIRS = 2
+
+/** One compact repair message: the concrete problems, then the cart to fix. */
+export function nova64RepairPrompt(code: string, problems: string[]): string {
+  return [
+    'Your Nova64 cart has problems that must be fixed:',
+    ...problems.map((p) => `- ${p}`),
+    '',
+    'Return the complete corrected cart in one ```javascript block. Keep everything that works;',
+    'change only what is needed. Plain function init/update/draw, no import or export,',
+    'and use only real nova64.* API names.',
+    '',
+    '```javascript',
+    code,
+    '```'
+  ].join('\n')
+}
