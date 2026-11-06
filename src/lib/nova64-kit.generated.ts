@@ -401,6 +401,27 @@ const __root: any = {};
     return lines.join('\n');
   }
 
+  // ---------------------------------------------------------------- repair
+
+  /** Bounded, visible repair attempts for carts prepare() could not fix. */
+  var MAX_REPAIRS = 2;
+
+  /** One compact repair message: the concrete problems, then the cart to fix. */
+  function repairPrompt(code, problems) {
+    return [
+      'Your Nova64 cart has problems that must be fixed:'
+    ].concat(problems.map(function (p) { return '- ' + p; }), [
+      '',
+      'Return the complete corrected cart in one ```javascript block. Keep everything that works;',
+      'change only what is needed. Plain function init/update/draw, no import or export,',
+      'and use only real nova64.* API names.',
+      '',
+      '```javascript',
+      code,
+      '```'
+    ]).join('\n');
+  }
+
   var api = {
     version: DATA ? DATA.version : null,
     templates: templates,
@@ -414,6 +435,8 @@ const __root: any = {};
     templatePrompt: templatePrompt,
     prepare: prepare,
     summarize: summarize,
+    repairPrompt: repairPrompt,
+    MAX_REPAIRS: MAX_REPAIRS,
     CONFIG_MARK: CONFIG_MARK,
     ENGINE_MARK: ENGINE_MARK
   };

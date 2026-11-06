@@ -10,6 +10,7 @@
 //   iOSMaigeXr/XRAiAssistant/Library3D/Nova64Templates.generated.swift
 //   AndroidMaigeXr/app/src/main/assets/playground-nova64.html        (inline <script>)
 //   AndroidMaigeXr/.../domain/models/Nova64TemplatesData.kt
+//   iOSMaigeXr/XRAiAssistant/Resources/nova64-kit.js, AndroidMaigeXr/app/src/main/assets/nova64-kit.js
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -124,6 +125,14 @@ function inlineKit(path) {
 }
 inlineKit(join(IOS, 'XRAiAssistant/Resources/playground-nova64.html'))
 inlineKit(join(ANDROID, 'app/src/main/assets/playground-nova64.html'))
+
+// ---------------------------------------------------------------- standalone kit for native code
+// The chat runs prepare() on each reply (JavaScriptCore on iOS, a WebView on Android)
+// to decide whether to ask the model for a repair.
+const standalone = `${banner.replace('//', '/*')} */\n${kit}\n`
+for (const [repo, rel] of [[IOS, 'XRAiAssistant/Resources/nova64-kit.js'], [ANDROID, 'app/src/main/assets/nova64-kit.js']]) {
+  if (existsSync(repo)) outputs.push([join(repo, rel), standalone])
+}
 
 // ---------------------------------------------------------------- native data (prompt side only)
 const swiftString = (s) => {
