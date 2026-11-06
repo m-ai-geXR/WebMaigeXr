@@ -1,7 +1,7 @@
 {
   "name": "maigexr-desktop",
   "productName": "m{ai}geXR",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "maigeXR - AI-powered Extended Reality development platform for desktop",
   "private": true,
   "main": "electron/dist/main.js",
