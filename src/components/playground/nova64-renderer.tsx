@@ -7,6 +7,7 @@ import {
   createNova64Bridge,
   type Nova64Bridge,
 } from '@/lib/nova64-runner'
+import { classifyCartError, type SceneErrorInfo } from '@/lib/scene-errors'
 
 interface Nova64RendererProps {
   code: string
@@ -40,7 +41,7 @@ export function Nova64Renderer({ code, isRunning }: Nova64RendererProps) {
   const [runnerSrc, setRunnerSrc] = useState<string | null>(null)
   const [isBooting, setIsBooting] = useState(true)
   const [isExecuting, setIsExecuting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<SceneErrorInfo | null>(null)
   const [logs, setLogs] = useState<string[]>([])
   const [showLogs, setShowLogs] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
@@ -73,7 +74,7 @@ export function Nova64Renderer({ code, isRunning }: Nova64RendererProps) {
       onError: (message) => {
         clearSettleTimer()
         setIsExecuting(false)
-        setError(message)
+        setError(classifyCartError(message))
         setShowLogs(true)
       },
       onLog: (message) => setLogs((prev) => [...prev.slice(-49), message]),
@@ -183,12 +184,20 @@ export function Nova64Renderer({ code, isRunning }: Nova64RendererProps) {
       )}
 
       {error && (
-        <div className="absolute top-3 left-3 right-28 bg-red-600 text-white p-3 rounded-lg z-20 max-h-32 overflow-y-auto">
+        <div className="absolute top-3 left-3 right-28 bg-red-600 text-white p-3 z-20 max-h-48 overflow-y-auto">
           <div className="flex items-start space-x-2">
             <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
             <div className="text-sm">
-              <div className="font-medium mb-1">Cart Error</div>
-              <div className="opacity-90 font-mono text-xs">{error}</div>
+              <div className="font-medium mb-1">{error.title}</div>
+              <div className="opacity-90 mb-1">{error.message}</div>
+              <div className="opacity-90">{error.action}</div>
+              {error.detail && (
+                // The engine's own message. Unlike a provider body this is the
+                // user's code failing, so it is worth showing in full.
+                <div className="opacity-70 font-mono text-xs mt-2 pt-2 border-t border-white/25">
+                  {error.detail}
+                </div>
+              )}
             </div>
           </div>
         </div>

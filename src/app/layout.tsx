@@ -6,11 +6,12 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { AppInitializer } from '@/components/app-initializer'
 import { Toaster } from 'react-hot-toast'
 import { AppConfig } from '@/lib/app-config'
+import { AppearanceEffects } from '@/components/brand/appearance'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'XRAiAssistant Station',
+  title: 'm{ai}geXR',
   description: 'AI-powered Extended Reality development platform for the web',
   manifest: '/manifest.json',
   themeColor: '#3b82f6',
@@ -58,6 +59,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <AppearanceEffects />
           <AppInitializer>
             {children}
           </AppInitializer>

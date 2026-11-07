@@ -40,7 +40,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-gray-900">
+    <div className="flex flex-col h-screen bg-brand-bg text-brand-text">
       <Header onOpenSettings={() => setShowSettings(true)} />
       
       <main className="flex-1 overflow-hidden">

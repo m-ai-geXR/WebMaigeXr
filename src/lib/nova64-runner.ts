@@ -20,7 +20,7 @@
  * camera, XR) on every EXECUTE_CODE, so re-running is safe.
  */
 
-export const NOVA64_VERSION = '0.5.2'
+export const NOVA64_VERSION = '0.5.6'
 export const NOVA64_DOCS_URL = 'https://nova64.io/docs/api-3d'
 
 /**

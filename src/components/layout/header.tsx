@@ -4,6 +4,7 @@ import { Settings, Moon, Sun, Monitor, BookMarked } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store/app-store'
+import { Wordmark } from '@/components/brand/wordmark'
 
 interface HeaderProps {
   onOpenSettings: () => void
@@ -38,16 +39,21 @@ export function Header({ onOpenSettings }: HeaderProps) {
   }
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+    <header className="flex items-center justify-between px-5 py-3 bg-brand-bg border-b border-brand-divider">
       <div className="flex items-center space-x-3">
-        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-sm">XR</span>
-        </div>
+        {/* Brand mascot: hooded figure with the {ai} braces as its face. */}
+        <img
+          src="/brand/maigexr-mascot.jpg"
+          alt="m{ai}geXR"
+          width={32}
+          height={32}
+          className="w-8 h-8 object-cover"
+        />
         <div>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            XRAiAssistant Station
+          <h1 className="font-heading text-lg font-extrabold tracking-heading text-brand-text">
+            <Wordmark />
           </h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="brand-label mt-0.5">
             AI-powered XR Development
           </p>
         </div>
@@ -56,7 +62,7 @@ export function Header({ onOpenSettings }: HeaderProps) {
       <div className="flex items-center space-x-2">
         <button
           onClick={cycleTheme}
-          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="p-2 text-brand-muted hover:text-brand-text hover:bg-brand-surface transition-colors"
           aria-label="Toggle theme"
         >
           {getThemeIcon()}
@@ -64,7 +70,7 @@ export function Header({ onOpenSettings }: HeaderProps) {
 
         <button
           onClick={() => setCurrentView('snippets')}
-          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="p-2 text-brand-muted hover:text-brand-text hover:bg-brand-surface transition-colors"
           aria-label="Open snippets"
           title="Code Snippets Library"
         >
@@ -73,7 +79,7 @@ export function Header({ onOpenSettings }: HeaderProps) {
 
         <button
           onClick={onOpenSettings}
-          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="p-2 text-brand-muted hover:text-brand-text hover:bg-brand-surface transition-colors"
           aria-label="Open settings"
         >
           <Settings size={20} />

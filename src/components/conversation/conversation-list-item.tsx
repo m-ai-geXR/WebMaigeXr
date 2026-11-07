@@ -59,8 +59,7 @@ export function ConversationListItem({
 
   return (
     <div
-      className={`
-        group relative p-4 rounded-lg border cursor-pointer
+      className={`group relative p-4  border cursor-pointer
         transition-all duration-200 hover:shadow-md
         ${isActive
           ? 'bg-primary/10 border-primary'

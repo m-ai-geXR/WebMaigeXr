@@ -104,6 +104,10 @@ dist
 # Gatsby files
 .cache/
 public
+# public/ holds generated assets (the sql.js wasm the predev script stages), but
+# brand/ is a source asset that has to ship with the repo.
+!public/brand/
+!public/brand/**
 
 # Storybook build outputs
 .out

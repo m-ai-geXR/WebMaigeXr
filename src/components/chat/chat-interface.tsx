@@ -7,7 +7,31 @@ import { AIService } from '@/lib/ai-service'
 import { extractCodeFromMessage, copyToClipboard, downloadTextFile } from '@/lib/utils'
 import { ChatMessage } from './chat-message'
 import { ExamplesModal } from '../examples/examples-modal'
+import { Nova64TemplateChips } from './nova64-template-chips'
 import toast from 'react-hot-toast'
+import { Wordmark } from '@/components/brand/wordmark'
+import { classifyAIError, formatAIErrorLine, formatAIErrorMessage } from '@/lib/ai-errors'
+import { nova64Kit, nova64TemplateRequest, nova64RepairPrompt, NOVA64_MAX_REPAIRS } from '@/lib/nova64-kit'
+
+/**
+ * Nova64 carts go through the shared kit: template CONFIGs are spliced into their
+ * tested engine, imports are generated, and known mistakes are repaired. What it
+ * did is reported in the chat so nothing changes silently.
+ */
+function reportKitResult(result: ReturnType<typeof nova64Kit.prepare>) {
+  const summary = nova64Kit.summarize(result)
+  if (summary) {
+    useAppStore.getState().addMessage({ role: 'assistant', content: `🛠️ **Nova64 kit**\n\n${summary.split('\n').map((line) => `- ${line}`).join('\n')}`, library: 'nova64' })
+    if (result.problems.length) toast(`Nova64: ${result.problems[0]}`, { icon: '⚠️' })
+  }
+}
+
+function prepareForLibrary(code: string, libraryId?: string): string {
+  if (libraryId !== 'nova64') return code
+  const result = nova64Kit.prepare(code)
+  reportKitResult(result)
+  return result.code
+}
 
 export function ChatInterface() {
   const {
@@ -107,6 +131,8 @@ export function ChatInterface() {
     try {
       // Build enhanced prompt with library context
       let enhancedPrompt = userMessage
+      // Nova64 games: the template the user's words picked, if any.
+      let gameTemplate: ReturnType<typeof nova64TemplateRequest> = null
       
       if (library) {
         enhancedPrompt = `${library.systemPrompt}\n\nUser request: ${userMessage}`
@@ -115,71 +141,91 @@ export function ChatInterface() {
         enhancedPrompt += `\n\nLibrary: ${library.name} v${library.version}`
         enhancedPrompt += `\nDescription: ${library.description}`
         
-        // Add code template if generating new code
-        if (userMessage.toLowerCase().includes('create') || userMessage.toLowerCase().includes('make') || userMessage.toLowerCase().includes('generate')) {
+        // Nova64 games: customise a tested engine's CONFIG instead of writing a whole cart.
+        gameTemplate = library.id === 'nova64'
+          ? nova64TemplateRequest(userMessage, useAppStore.getState().currentCode)
+          : null
+
+        if (gameTemplate) {
+          enhancedPrompt += `\n\n${gameTemplate.prompt}`
+        } else if (userMessage.toLowerCase().includes('create') || userMessage.toLowerCase().includes('make') || userMessage.toLowerCase().includes('generate')) {
+          // Add code template if generating new code
           enhancedPrompt += `\n\nUse this as a starting template:\n\`\`\`javascript\n${library.codeTemplate}\n\`\`\``
         }
       }
 
-      // Add placeholder for streaming response
-      const assistantMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      addMessage({
-        role: 'assistant',
-        content: '',
-        library: library?.id,
-        hasCode: false
-      })
-
-      let streamedContent = ''
-      
-      await aiService.generateStreamingResponse(enhancedPrompt, {
-        provider: provider.id,
-        model: model.id,
-        apiKey,
-        temperature: settings.temperature,
-        topP: settings.topP,
-        effort: settings.effort,
-        systemPrompt: settings.systemPrompt
-      }, (chunk) => {
-        if (!chunk.done) {
+      /** Stream one reply into a new assistant message and return its full text. */
+      const streamReply = async (prompt: string, prefix: string): Promise<string> => {
+        addMessage({ role: 'assistant', content: prefix, library: library?.id, hasCode: false })
+        let streamedContent = prefix
+        await aiService.generateStreamingResponse(prompt, {
+          provider: provider.id,
+          model: model.id,
+          apiKey,
+          temperature: settings.temperature,
+          topP: settings.topP,
+          effort: settings.effort,
+          systemPrompt: settings.systemPrompt
+        }, (chunk) => {
+          if (chunk.done) return
           streamedContent += chunk.content
-          
-          // Update the last message with streamed content
           const updatedMessages = [...useAppStore.getState().messages]
-          const lastMessageIndex = updatedMessages.length - 1
-          if (lastMessageIndex >= 0 && updatedMessages[lastMessageIndex].role === 'assistant') {
-            updatedMessages[lastMessageIndex] = {
-              ...updatedMessages[lastMessageIndex],
+          const last = updatedMessages.length - 1
+          if (last >= 0 && updatedMessages[last].role === 'assistant') {
+            updatedMessages[last] = {
+              ...updatedMessages[last],
               content: streamedContent,
               hasCode: extractCodeFromMessage(streamedContent) !== null
             }
             useAppStore.setState({ messages: updatedMessages })
           }
-        }
-      })
+        })
+        return streamedContent
+      }
 
-      // Final update
-      const hasCode = extractCodeFromMessage(streamedContent) !== null
+      // A template reply opens with which template the user's words picked.
+      const reply = await streamReply(enhancedPrompt, gameTemplate?.note ? `${gameTemplate.note}\n\n` : '')
+      const extractedCode = extractCodeFromMessage(reply)
 
-      // Auto-extract and set code if found
-      if (hasCode) {
-        const extractedCode = extractCodeFromMessage(streamedContent)
-        if (extractedCode) {
-          setCurrentCode(extractedCode)
-          toast.success('Code extracted and ready to run!')
+      if (extractedCode && library?.id === 'nova64') {
+        // Check, then repair: feed concrete problems back to the model, bounded and
+        // visible. Keep the best version so far if a repair makes things worse.
+        let best = nova64Kit.prepare(extractedCode)
+        reportKitResult(best)
+        for (let attempt = 1; best.problems.length && attempt <= NOVA64_MAX_REPAIRS; attempt++) {
+          const repairReply = await streamReply(
+            `${library.systemPrompt}\n\n${nova64RepairPrompt(best.code, best.problems)}`,
+            `🔧 **Fixing (${attempt}/${NOVA64_MAX_REPAIRS}):** ${best.problems[0]}\n\n`
+          )
+          const repairedCode = extractCodeFromMessage(repairReply)
+          if (!repairedCode) break
+          const repaired = nova64Kit.prepare(repairedCode)
+          reportKitResult(repaired)
+          if (repaired.problems.length > best.problems.length) {
+            addMessage({ role: 'assistant', content: 'That repair was worse, so the previous version is kept.', library: 'nova64' })
+            break
+          }
+          best = repaired
         }
+        setCurrentCode(best.code)
+        toast.success(best.problems.length ? 'Code ready, with problems still noted above' : 'Code extracted and ready to run!')
+      } else if (extractedCode) {
+        setCurrentCode(prepareForLibrary(extractedCode, library?.id))
+        toast.success('Code extracted and ready to run!')
       }
 
     } catch (error) {
+      // Full detail to the console for debugging; the user gets the classified
+      // message, never a raw provider body.
       console.error('AI API Error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      
+      const info = classifyAIError(error, provider?.name)
+
       addMessage({
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${errorMessage}\n\nPlease check your API key and try again.`
+        content: formatAIErrorMessage(info)
       })
-      
-      toast.error(`AI Error: ${errorMessage}`)
+
+      toast.error(formatAIErrorLine(info))
     } finally {
       setLoading(false)
     }
@@ -195,7 +241,7 @@ export function ChatInterface() {
   const handleCodeExtract = (content: string) => {
     const code = extractCodeFromMessage(content)
     if (code) {
-      setCurrentCode(code)
+      setCurrentCode(prepareForLibrary(code, getCurrentLibrary()?.id))
       setCurrentView('playground')
       toast.success('Code sent to playground!')
     } else {
@@ -231,13 +277,13 @@ export function ChatInterface() {
   return (
     <div className="flex flex-col h-full">
       {/* Header with dropdowns */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="flex items-center justify-between px-5 py-2.5 border-b border-brand-divider bg-brand-bg">
         <div className="flex items-center space-x-3">
           {/* Library Dropdown */}
           <div className="relative" ref={libraryDropdownRef}>
             <button
               onClick={() => setShowLibraryDropdown(!showLibraryDropdown)}
-              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+              className="flex items-center space-x-2 px-3 py-1.5 border border-brand-divider hover:bg-brand-surface transition-colors text-sm font-medium text-brand-text"
             >
               <Code size={16} />
               <span>{currentLibrary?.name || 'Select Library'}</span>
@@ -245,7 +291,7 @@ export function ChatInterface() {
             </button>
 
             {showLibraryDropdown && (
-              <div className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1 w-56 bg-brand-bg border border-brand-divider shadow-lg z-50 max-h-80 overflow-y-auto">
                 <div className="py-1">
                   {libraries.map((library) => (
                     <button
@@ -272,7 +318,7 @@ export function ChatInterface() {
           <div className="relative" ref={modelDropdownRef}>
             <button
               onClick={() => setShowModelDropdown(!showModelDropdown)}
-              className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 hover:from-purple-200 hover:to-blue-200 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+              className="flex items-center space-x-2 px-3 py-1.5 border border-brand-divider hover:bg-brand-surface transition-colors text-sm font-medium text-brand-text"
             >
               <Sparkles size={16} />
               <span>{currentModel?.name || 'Select Model'}</span>
@@ -280,7 +326,7 @@ export function ChatInterface() {
             </button>
 
             {showModelDropdown && (
-              <div className="absolute top-full left-0 mt-1 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1 w-72 bg-brand-bg border border-brand-divider shadow-lg z-50 max-h-96 overflow-y-auto">
                 <div className="py-1">
                   {providers.map((provider) => (
                     <div key={provider.id}>
@@ -318,7 +364,7 @@ export function ChatInterface() {
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowExamples(true)}
-            className="flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-200 hover:to-emerald-200 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+            className="flex items-center space-x-1 px-3 py-1.5 border border-brand-divider hover:bg-brand-surface transition-colors text-sm font-medium text-brand-text"
           >
             <BookOpen size={14} />
             <span>Examples</span>
@@ -337,25 +383,32 @@ export function ChatInterface() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4">
-              <span className="text-white font-bold text-xl">XR</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome to XRAiAssistant Station
+            <img
+              src="/brand/maigexr-mascot.jpg"
+              alt=""
+              width={64}
+              height={64}
+              className="w-16 h-16 object-cover mb-5"
+            />
+            <h2 className="font-heading text-3xl font-extrabold tracking-heading text-brand-text mb-3">
+              Welcome to <Wordmark />
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+            <p className="text-brand-muted mb-8 max-w-md leading-relaxed">
               Start creating amazing 3D experiences with AI assistance. 
               Ask me to create scenes, explain concepts, or help with debugging.
             </p>
             
             {currentLibrary && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 max-w-md">
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+              <div className="border-l-2 border-brand-accent bg-brand-surface px-5 py-4 max-w-md text-left">
+                <h3 className="brand-label mb-1.5 !text-brand-accent">
                   Current Library: {currentLibrary.name} v{currentLibrary.version}
                 </h3>
                 <p className="text-sm text-blue-700 dark:text-blue-200">
                   {currentLibrary.description}
                 </p>
+                {currentLibrary.id === 'nova64' && (
+                  <Nova64TemplateChips title="Game templates: say one of these words, or tap to preview" />
+                )}
               </div>
             )}
           </div>
@@ -385,7 +438,7 @@ export function ChatInterface() {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="px-5 py-4 border-t border-brand-divider">
         <form onSubmit={handleSubmit} className="flex items-end space-x-3">
           <div className="flex-1 relative">
             <textarea
@@ -394,7 +447,7 @@ export function ChatInterface() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={`Ask me to create a 3D scene with ${currentLibrary?.name || '3D library'}...`}
-              className="w-full p-3 pr-12 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-3 pr-12 border border-brand-divider bg-brand-bg text-brand-text placeholder:text-brand-muted resize-none focus:outline-none focus:border-brand-accent transition-colors"
               rows={Math.min(Math.max(input.split('\n').length, 1), 4)}
               disabled={isLoading}
             />
@@ -411,7 +464,7 @@ export function ChatInterface() {
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-3 bg-brand-accent text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
           >
             {isLoading ? (
               <Loader2 size={20} className="animate-spin" />

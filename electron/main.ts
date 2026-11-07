@@ -161,7 +161,9 @@ function createWindow(): void {
   })
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:3000')
+    // Port 3000 is a popular default; another dev server may already own it.
+    // ELECTRON_DEV_URL lets the window point elsewhere without a code change.
+    mainWindow.loadURL(process.env.ELECTRON_DEV_URL || 'http://localhost:3000')
     mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadURL(

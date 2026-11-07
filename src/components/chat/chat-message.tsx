@@ -7,6 +7,8 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 import { useTheme } from 'next-themes'
+import { nova64Kit } from '@/lib/nova64-kit'
+import { Nova64TemplateChips } from './nova64-template-chips'
 
 interface ChatMessageProps {
   message: ChatMessageType
@@ -19,24 +21,29 @@ export function ChatMessage({ message, onExtractCode, onCopy, onDownload }: Chat
   const { theme } = useTheme()
   const isUser = message.role === 'user'
   const hasCode = extractCodeFromMessage(message.content) !== null
+  // Replies built on a Nova64 game template show the template chips.
+  const templateId = !isUser && message.library === 'nova64' ? nova64Kit.templateIdOf(message.content) : null
 
   return (
     <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* Avatar */}
       <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
         isUser 
-          ? 'bg-blue-600 text-white' 
-          : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+          ? 'bg-brand-accent text-white' 
+          : 'bg-brand-surface text-gray-600 dark:text-gray-300'
       }`}>
         {isUser ? <User size={16} /> : <Bot size={16} />}
       </div>
 
       {/* Message content */}
       <div className={`flex-1 max-w-[80%] ${isUser ? 'text-right' : 'text-left'}`}>
-        <div className={`inline-block p-3 rounded-lg ${
+        {/* text-left: the wrapper's text-right places the bubble on the right,
+            but it is inherited, so without this a multi-line prompt renders
+            right-aligned with a ragged left edge and is hard to read. */}
+        <div className={`inline-block p-3  text-left ${
           isUser
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+            ? 'bg-brand-accent text-white'
+            : 'bg-brand-surface text-brand-text'
         }`}>
           {isUser ? (
             <p className="whitespace-pre-wrap">{message.content}</p>
@@ -76,14 +83,16 @@ export function ChatMessage({ message, onExtractCode, onCopy, onDownload }: Chat
           )}
         </div>
 
+        {templateId && <Nova64TemplateChips activeId={templateId} title="Game templates: say one of these words, or tap to preview" />}
+
         {/* Message metadata and actions */}
-        <div className={`flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400 ${
+        <div className={`flex items-center gap-2 mt-1 text-xs text-brand-muted ${
           isUser ? 'justify-end' : 'justify-start'
         }`}>
           <span>{formatTimestamp(message.timestamp)}</span>
           
           {message.library && (
-            <span className="bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded">
+            <span className="bg-brand-surface px-2 py-0.5 rounded">
               {message.library}
             </span>
           )}
@@ -93,7 +102,7 @@ export function ChatMessage({ message, onExtractCode, onCopy, onDownload }: Chat
               {hasCode && (
                 <button
                   onClick={onExtractCode}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="p-1 hover:bg-brand-surface rounded transition-colors"
                   title="Send to playground"
                 >
                   <Code size={12} />
@@ -103,7 +112,7 @@ export function ChatMessage({ message, onExtractCode, onCopy, onDownload }: Chat
               {hasCode && (
                 <button
                   onClick={onDownload}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="p-1 hover:bg-brand-surface rounded transition-colors"
                   title="Download code"
                 >
                   <Download size={12} />
@@ -112,7 +121,7 @@ export function ChatMessage({ message, onExtractCode, onCopy, onDownload }: Chat
               
               <button
                 onClick={onCopy}
-                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                className="p-1 hover:bg-brand-surface rounded transition-colors"
                 title="Copy message"
               >
                 <Copy size={12} />

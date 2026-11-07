@@ -60,7 +60,7 @@ export class BuildService {
       'reactylon': '^3.2.1',
 
       // Nova64 retro 3D fantasy console
-      'nova64': '^0.5.2',
+      'nova64': '^0.5.6',
 
       // React
       'react': '^18.2.0',

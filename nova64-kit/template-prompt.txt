@@ -1,0 +1,20 @@
+GAME TEMPLATE MODE: {genre} ({style})
+
+m{ai}geXR has a tested Nova64 engine for this request. {description}
+The engine already handles movement, collisions, level generation, combat or scoring, the HUD, story slides and auto-play. You design the game by rewriting its CONFIG.
+
+Reply with one or two sentences about your design, then ONLY the CONFIG below rewritten for the request, in your usual code block format. Do not write engine code, init/update/draw, imports or exports; m{ai}geXR adds the engine when the cart runs.
+
+Rules:
+- Keep the first line exactly: // NOVA64 TEMPLATE: {id}
+- Keep KEYWORDS exactly as it is.
+- Keep every const and property name. Change the values, names, text, colours and numbers so the game matches the request. Arrays may have more or fewer entries of the same shape.
+- 3D colours are 0xRRGGBB numbers; UI colours are [r, g, b]. Never use 0x000000. Keep enemies, pickups and text bright against the dark scene.
+- Do not add functions, API calls or new consts.
+
+{guide}
+
+CONFIG to rewrite:
+```javascript
+{config}
+```

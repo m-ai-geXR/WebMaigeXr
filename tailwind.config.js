@@ -9,6 +9,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Brand tokens, read from the CSS variables in globals.css so that
+        // light/dark and any user CSS override flow through automatically.
+        brand: {
+          DEFAULT: 'var(--brand-accent)',
+          accent: 'var(--brand-accent)',
+          accent2: 'var(--brand-accent-2)',
+          bg: 'var(--brand-bg)',
+          surface: 'var(--brand-surface)',
+          text: 'var(--brand-text)',
+          muted: 'var(--brand-muted)',
+          divider: 'var(--brand-divider)',
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -35,8 +47,15 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        // Archivo is the brand typeface; Inter stays as the fallback.
+        sans: ['Archivo', 'Inter', 'system-ui', 'sans-serif'],
+        heading: ['Archivo', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Consolas', 'Monaco', 'monospace'],
+      },
+      letterSpacing: {
+        // Headings are tight; small uppercase labels are wide.
+        heading: '-0.02em',
+        label: '0.06em',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

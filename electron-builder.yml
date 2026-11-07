@@ -2,7 +2,7 @@
 # https://www.electron.build/configuration/configuration
 
 appId: com.maigexr.desktop
-productName: maigeXR
+productName: m{ai}geXR
 copyright: Copyright 2024 maigeXR Team
 
 # Directories
@@ -55,7 +55,7 @@ win:
       arch:
         - x64
   icon: build/icon.ico
-  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  artifactName: "maigeXR-${version}-${os}-${arch}.${ext}"
 
 # Windows NSIS installer configuration
 nsis:
@@ -85,7 +85,7 @@ mac:
         - arm64
   icon: build/icon.icns
   category: public.app-category.developer-tools
-  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  artifactName: "maigeXR-${version}-${os}-${arch}.${ext}"
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
@@ -121,7 +121,7 @@ linux:
         - x64
   icon: build/icons
   category: Development
-  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  artifactName: "maigeXR-${version}-${os}-${arch}.${ext}"
   synopsis: AI-powered Extended Reality development platform
   description: |
     maigeXR is a revolutionary AI-powered Extended Reality development platform
@@ -146,7 +146,7 @@ rpm:
 
 # AppImage configuration
 appImage:
-  artifactName: "${productName}-${version}-${arch}.${ext}"
+  artifactName: "maigeXR-${version}-${arch}.${ext}"
 
 # Auto-update configuration (for future implementation)
 publish:

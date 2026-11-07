@@ -214,8 +214,63 @@ rather than a palette index or a 3D hex value.
 
 ## 9. Known rough edges
 
-- The `dist/` inside the npm tarball is internally inconsistent:
+- ~~The `dist/` inside the npm tarball is internally inconsistent:
   `dist/cart-runner.html` references an `assets/main-*.js` filename that the
-  tarball does not contain. Only relevant if someone revisits vendoring.
+  tarball does not contain.~~ Fixed in 0.5.3: the referenced asset ships. See
+  [NOVA64_UPSTREAM_ISSUES.md](NOVA64_UPSTREAM_ISSUES.md) for the issues that do
+  still reproduce.
 - `hero-embed` appends `demo=hero-demo` to the URL when absent. Harmless:
   studio mode returns before any cart path is resolved.
+
+## 10. Game templates and the repair loop (1.1)
+
+Adapted from Nova64 Studio's method: give the model less to write, check what it
+wrote, and send concrete problems back to it.
+
+**One source.** Everything lives in `nova64-kit/`: `kit.src.js` (the logic),
+`engines/*.js` (three tested engines: dungeon, runner, arena), `configs/*.js`
+(six example CONFIGs, two styles per engine, each with a `KEYWORDS` const),
+`namespace-0.5.6.json` (the real `NAMESPACE_MAP`) and `template-prompt.txt`.
+`node nova64-kit/build.mjs` writes every platform's copy:
+
+| Output | Used by |
+| --- | --- |
+| `src/lib/nova64-kit.generated.ts` | web chat and playground |
+| iOS and Android `playground-nova64.html` (inline script) | every cart injected on mobile |
+| iOS `Resources/nova64-kit.js`, Android `assets/nova64-kit.js` | the native chat's repair check |
+| `Nova64Templates.generated.swift`, `Nova64TemplatesData.kt` | native template picking and chips |
+
+Never edit an output by hand. `--check` fails when any output is stale, and the
+web tests run it. While the iOS main checkout is on another branch, point the build
+and the tests at a worktree: `NOVA64_KIT_IOS=../.ios-templates-wt`.
+
+**Templates.** The user's words are matched against each template's `KEYWORDS`.
+On a match the model edits only the template's `CONFIG` section, and `prepare()`
+splices that section into the tested engine. The chat says which template the
+words picked ("Started from ...") and shows keyword chips that preview each
+template.
+
+**Check.** `prepare()` makes the fixes it can do safely: it strips import and
+export lines, generates the API imports from `NAMESPACE_MAP`, and removes `cls()`
+from `draw()` in 3D carts. Anything left over goes into `problems`: unknown
+`nova64.*` names, `this.` inside a lifecycle function, missing `init`/`update`, and
+syntax errors.
+
+**Repair.** When a finished reply's cart still has problems, the chat sends the
+model `repairPrompt(code, problems)`. That is one compact message listing the
+problems, followed by the cart. This happens at most `MAX_REPAIRS` (2) times per
+user message, and each attempt is shown in the chat as "Fixing (n/2): <problem>".
+If a repair comes back with more problems than the best version so far, it is
+dropped and the previous cart is kept. Where it runs:
+
+- Web: `chat-interface.tsx`.
+- iOS: `ChatViewModel.checkNova64Reply`, with the kit in JavaScriptCore
+  (`Library3D/Nova64KitRunner.swift`).
+- Android: `ChatViewModel.checkNova64Reply`, with the kit in an AndroidX
+  JavaScriptSandbox (`domain/models/Nova64KitRunner.kt`). If the device's
+  WebView cannot run the sandbox, replies are not checked and play as before.
+
+**Not done.** There is no blank-screen check. The runner is cross-origin, so its
+pixels cannot be read, and a probe that reports scene state through `CART_LOG`
+has not been built. Runtime errors are still only shown to the user, not
+repaired.

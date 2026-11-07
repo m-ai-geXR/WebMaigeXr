@@ -4,33 +4,83 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Archivo is the brand typeface, used on maigexr.seacloud9.studio at weight 800
+   for headings with tight tracking. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap');
 
+/* ---------------------------------------------------------------------------
+   m{ai}geXR brand tokens.
+
+   Mirrors the design system on maigexr.seacloud9.studio. Cobalt #2050e0 is the
+   accent; the neutral ramp and the off-white ground come from the same sheet.
+   Components read these rather than hardcoding brand colours, and user CSS in
+   Settings can override any of them.
+   --------------------------------------------------------------------------- */
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --brand-accent: #2050e0;
+  --brand-accent-2: #4a74ea;
+  --brand-accent-300: #b9c8ff;
+  --brand-accent-400: #8aa6ff;
+  --brand-accent-500: #3f6bf0;
+  --brand-accent-600: #1740c4;
+  --brand-accent-700: #102f96;
+
+  --brand-bg: #f3f2f2;
+  --brand-surface: #eae9e9;
+  --brand-text: #201e1d;
+  --brand-muted: #605d5d;
+  --brand-divider: rgba(32, 30, 29, 0.4);
+
+  --brand-font-heading: 'Archivo', 'Inter', system-ui, sans-serif;
+  --brand-font-body: 'Inter', system-ui, sans-serif;
+  --brand-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+.dark {
+  /* Same accent, re-grounded for dark. Cobalt is held a little lighter here so
+     it keeps contrast against a near-black surface. */
+  --brand-accent: #3f6bf0;
+  --brand-accent-2: #5b7ee6;
+
+  --brand-bg: #0b0d12;
+  --brand-surface: #151821;
+  --brand-text: #f3f2f2;
+  --brand-muted: #9b9797;
+  --brand-divider: rgba(243, 242, 242, 0.18);
 }
+
+/* User CSS from Settings is appended after this block, so it wins. */
 
 html {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--brand-font-body);
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  /* Flat ground, no gradient. The brand is a single surface with the accent
+     doing the work. */
+  color: var(--brand-text);
+  background: var(--brand-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--brand-font-heading);
+  letter-spacing: -0.02em;
+}
+
+/* Small uppercase label, used for section headers and meta rows. */
+.brand-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand-muted);
+}
+
+/* Focus ring in the brand accent rather than Tailwind's default blue. */
+*:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
 }
 
 /* Custom scrollbar */
@@ -43,8 +93,8 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.5);
-  border-radius: 4px;
+  background: var(--brand-divider);
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
