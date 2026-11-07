@@ -222,3 +222,17 @@ describe('Nova64 repair loop', () => {
     expect(NOVA64_MAX_REPAIRS).toBe(2)
   })
 })
+
+describe('reply markers inside the code block', () => {
+  it('removes [EXPLAIN] notes a model left inside the fence', () => {
+    const r = nova64Kit.prepare('let c;\nfunction init() { c = createCube(1); }\nfunction update(dt) {}\n\n[EXPLAIN]\n- Replaced this.cube with a let.\n[/EXPLAIN]\n')
+    expect(r.code).not.toContain('EXPLAIN')
+    expect(r.problems).toEqual([])
+  })
+
+  it('removes unterminated notes and leaves strings alone', () => {
+    expect(nova64Kit.prepare('function init() {}\nfunction update(dt) {}\n[EXPLAIN]\nwords with no close tag').problems).toEqual([])
+    const s = nova64Kit.prepare('function init() { const s = "[EXPLAIN] here" }\nfunction update(dt) {}')
+    expect(s.code).toContain('"[EXPLAIN] here"')
+  })
+})
